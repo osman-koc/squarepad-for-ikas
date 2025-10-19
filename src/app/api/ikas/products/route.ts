@@ -38,7 +38,6 @@ export async function GET(request: NextRequest) {
   const page = normalisePage(searchParams.get('page'));
   const limit = normaliseLimit(searchParams.get('limit'));
   const search = searchParams.get('search')?.trim();
-  const sku = searchParams.get('sku')?.trim();
 
   const variables: ListProductsQueryVariables = {
     pagination: {
@@ -46,7 +45,6 @@ export async function GET(request: NextRequest) {
       limit,
     },
     search: search ? search : undefined,
-    sku: sku ? { eq: sku } : undefined,
   };
 
   try {

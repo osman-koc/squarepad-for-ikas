@@ -4,7 +4,7 @@ import { AppBridgeHelper } from '@ikas/app-helpers';
 import { Info } from 'lucide-react';
 import Image from 'next/image';
 import { flushSync } from 'react-dom';
-import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject, type Dispatch, type SetStateAction, type ReactNode } from 'react';
 import { TokenHelpers } from '@/helpers/token-helpers';
 import { ApiRequests } from '@/lib/api-requests';
 import { Button } from '@/components/ui/button';
@@ -85,6 +85,20 @@ const InfoTooltip = ({ message }: { message: string }) => {
     </span>
   );
 };
+
+const SectionHeader = ({ title, description, eyebrow }: { title: string; description: string; eyebrow?: string }) => (
+  <div className="space-y-2">
+    {eyebrow ? <p className="text-xs font-medium uppercase tracking-wide text-primary/80">{eyebrow}</p> : null}
+    <div>
+      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </div>
+  </div>
+);
+
+const InlineHint = ({ children }: { children: ReactNode }) => (
+  <div className="rounded-md border border-dashed border-muted/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">{children}</div>
+);
 
 export default function SquarePadAdminPage() {
   const [token, setToken] = useState<string | null>(null);
@@ -260,17 +274,17 @@ export default function SquarePadAdminPage() {
         {
           id: 'xml' as TabId,
           label: 'XML Feed',
-          description: 'Ürün feed’inizdeki ek görselleri kare versiyonlarıyla değiştirin.',
-        },
-        {
-          id: 'image' as TabId,
-          label: 'URL ile Görsel',
-          description: 'Herhangi bir görsel bağlantısını kare formatına uyarlayın.',
+          description: '',
         },
         {
           id: 'product' as TabId,
-          label: 'Ürün Seçerek Görsel',
-          description: 'Mevcut ürün kataloğunuzdan görsel seçip kare formata dönüştürün.',
+          label: 'Ürün Katalog',
+          description: '',
+        },
+        {
+          id: 'image' as TabId,
+          label: 'Görsel URL',
+          description: '',
         },
       ],
     [],
@@ -469,19 +483,15 @@ export default function SquarePadAdminPage() {
         page: number;
         limit: number;
         search?: string;
-        sku?: string;
+        skuContains?: string;
       } = {
         page: 1,
         limit: 50,
       };
 
       if (trimmed) {
-        const looksLikeSku = /^[a-z0-9-_]+$/i.test(trimmed);
-        if (looksLikeSku) {
-          params.sku = trimmed;
-        } else {
-          params.search = trimmed;
-        }
+        params.search = trimmed;
+        params.skuContains = trimmed;
       }
 
       try {
@@ -851,58 +861,55 @@ export default function SquarePadAdminPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pb-12 pt-10">
-        <header className="space-y-3">
-          <div className="flex flex-wrap items-center gap-4">
-            <Image alt="SquarePad Logo" className="h-12 w-12 rounded-xl border border-muted bg-card p-1 shadow-sm" height={48} width={48} src="/square-logo.svg" />
-            <div>
-              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">SquarePad</span>
-              <h1 className="text-2xl font-semibold text-foreground">Görsellerinizi Kare Formata Taşıyın</h1>
+      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 pb-12 pt-10">
+        <header className="rounded-2xl border border-muted/60 bg-gradient-to-b from-background via-background/95 to-muted/20 p-6 shadow-sm">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <Image alt="SquarePad Logo" className="h-12 w-12 rounded-xl border border-muted bg-card p-1 shadow-sm" height={48} width={48} src="/square-logo.svg" />
+              <div className="space-y-1">
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">SquarePad</span>
+                <h1 className="text-2xl font-semibold text-foreground">Ürün Görsellerini Kare Formatında Sergileme</h1>
+              </div>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">Aşağıdaki araçlarla ürün görsellerinizi kare formatta yeniden boyutlandırabilir, hızlıca kontrol edip paylaşılabilir bağlantılar oluşturabilirsiniz.</p>
-          {tokenError && <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{tokenError}</p>}
+          {tokenError ? (
+            <p className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{tokenError}</p>
+          ) : null}
         </header>
 
-        <Card>
-            <CardHeader>
-              <CardTitle>Görsel Dönüştürme Seçenekleri</CardTitle>
-              <CardDescription>İhtiyacınıza en uygun yöntemi seçerek kare görseller üretin.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex flex-wrap gap-2 rounded-xl border border-muted bg-muted/30 p-1">
-              {tabItems.map((tab) => (
-                <Button
-                  key={tab.id}
-                  type="button"
-                  variant="ghost"
-                  aria-pressed={activeTab === tab.id}
-                  className={`min-w-[150px] flex-1 px-4 py-2 text-sm font-medium transition-colors duration-75 ${
-                    activeTab === tab.id
-                      ? 'bg-primary text-primary-foreground shadow-sm ring-1 ring-primary'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
-                  onClick={() => {
-                    if (activeTab !== tab.id) {
-                      flushSync(() => {
-                        setActiveTab(tab.id);
-                      });
-                    }
-                  }}
-                >
-                  {tab.label}
-                </Button>
-              ))}
-            </div>
-            <p className="text-sm text-muted-foreground">{tabItems.find((tab) => tab.id === activeTab)?.description}</p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-2">
+            {tabItems.map((tab) => (
+              <Button
+                key={tab.id}
+                type="button"
+                variant={activeTab === tab.id ? 'default' : 'ghost'}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                  activeTab === tab.id ? 'shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                }`}
+                onClick={() => {
+                  if (activeTab !== tab.id) {
+                    flushSync(() => {
+                      setActiveTab(tab.id);
+                    });
+                  }
+                }}
+              >
+                {tab.label}
+              </Button>
+            ))}
+          </div>
+          <p className="text-sm text-muted-foreground">{tabItems.find((tab) => tab.id === activeTab)?.description}</p>
+        </div>
 
         {activeTab === 'product' && (
           <Card>
             <CardHeader>
-              <CardTitle>Katalogdan Seçilen Ürün ile Kare Görsel</CardTitle>
-              <CardDescription>İkas kataloğunuzdaki ürünleri listeleyip görsellerinden birini seçin, kare ölçülerde yeniden oluşturun.</CardDescription>
+              <SectionHeader
+                eyebrow="Katalog Tab"
+                title=""
+                description=""
+              />
             </CardHeader>
             <CardContent>
               <form className="space-y-6" onSubmit={handleProductSubmit}>
@@ -912,7 +919,9 @@ export default function SquarePadAdminPage() {
                       <span>Katalogdan Ürün ve Görsel Seçimi</span>
                       <InfoTooltip message="Ürün seçme penceresini açarak katalogdaki ürünleri ve görsellerini inceleyin." />
                     </div>
-                    <p className="text-xs text-muted-foreground">Ürün adı, ID veya SKU bilgisiyle arama yapabilir, seçtiğiniz ürünün görsellerinden birini kare formata dönüştürebilirsiniz.</p>
+                    <InlineHint>
+                      Ürün adı, ID veya SKU ile arama yapabilir; seçtiğiniz ürünün görsellerini onay penceresi içinden yönetebilirsiniz.
+                    </InlineHint>
                     <div className="flex flex-wrap items-center gap-3">
                       <Button type="button" disabled={!token || productListLoading} onClick={handleOpenProductSelection}>
                         {productListLoading ? 'Ürünler yükleniyor…' : 'Ürün Seç'}
@@ -946,29 +955,21 @@ export default function SquarePadAdminPage() {
                       <div className="flex items-start justify-between">
                         <div>
                           <h3 className="text-sm font-semibold text-foreground">{selectedProduct.name}</h3>
-                          <p className="text-xs text-muted-foreground">{selectedProduct.id}</p>
-                          {selectedProduct.variants.length ? (
-                            <p className="mt-1 text-[11px] text-muted-foreground">
-                              {selectedProduct.variants.length} varyant ·{' '}
-                              {selectedProduct.variants
-                                .map((variant) => variant.sku)
-                                .filter((sku): sku is string => Boolean(sku))
-                                .slice(0, 3)
-                                .join(', ') || 'SKU bilgisi yok'}
-                            </p>
-                          ) : null}
+                          <p className="text-xs text-muted-foreground">
+                            SKU: {selectedProduct.variants.find((variant) => variant.sku)?.sku ?? 'Bilgi yok'}
+                          </p>
                         </div>
                         {selectedProductImage ? (
                           <span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">Görsel seçildi</span>
                         ) : null}
                       </div>
 
-                      {productImagesLoadingId === selectedProduct.id ? (
-                        <p className="text-xs text-muted-foreground">Ürün görselleri yükleniyor…</p>
-                      ) : selectedProductImages.length > 0 ? (
-                        <div className="flex flex-wrap gap-3">
-                          {selectedProductImages.map((image, index) => {
-                            const isActive = selectedProductImage?.url === image.url;
+                          {productImagesLoadingId === selectedProduct.id ? (
+                            <p className="text-xs text-muted-foreground">Ürün görselleri yükleniyor…</p>
+                          ) : selectedProductImages.length > 0 ? (
+                            <div className="flex flex-wrap gap-3">
+                              {selectedProductImages.map((image, index) => {
+                                const isActive = selectedProductImage?.imageId === image.imageId;
                             return (
                               <button
                                 type="button"
@@ -998,8 +999,8 @@ export default function SquarePadAdminPage() {
                       )}
                     </div>
                   ) : (
-                    <div className="md:col-span-2 rounded-lg border border-dashed border-muted bg-muted/10 p-4 text-xs text-muted-foreground">
-                      Ürün Seç butonuyla kataloğunuzu açın; seçim yaptığınızda ürün ve görsel bilgisi burada özetlenecek.
+                    <div className="md:col-span-2">
+                      <InlineHint>Ürün Seç butonu ile kataloğu açın; seçim yaptığınızda ürün ve görsel detayları burada listelenir.</InlineHint>
                     </div>
                   )}
 
@@ -1098,50 +1099,42 @@ export default function SquarePadAdminPage() {
                 </div>
 
                 {productPreviewUrl && (
-                  <>
-                    <div className="mt-6 flex flex-col gap-2">
-                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Oluşturulan Görsel</span>
-                      <div className="rounded-md border border-muted bg-muted/30 px-3 py-3 text-xs text-muted-foreground">
-                        <p className="break-all leading-relaxed">{productShareUrl ?? productPreviewUrl}</p>
-                        <div className="mt-3 flex flex-wrap items-center gap-3">
-                          <Button
-                            type="button"
-                            className="shrink-0"
-                            variant={productCopyPresentation.variant}
-                            size="sm"
-                            onClick={handleProductCopyShareUrl}
-                            disabled={!productShareUrl}
-                          >
-                            {productCopyPresentation.label}
-                          </Button>
-                          <span aria-live="polite" className="text-[11px] text-muted-foreground">
-                            {productCopyPresentation.message}
-                          </span>
+                  <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,260px)]">
+                    <div className="space-y-4 rounded-lg border border-muted/70 bg-muted/20 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold text-foreground">Paylaşılabilir bağlantı</p>
+                          <p className="text-xs text-muted-foreground">URL’yi e-ticaret ekipleriyle paylaşabilir veya kampanya araçlarınıza ekleyebilirsiniz.</p>
                         </div>
+                        <Button type="button" variant={productCopyPresentation.variant} size="sm" onClick={handleProductCopyShareUrl} disabled={!productShareUrl}>
+                          {productCopyPresentation.label}
+                        </Button>
                       </div>
+                      <p className="break-all rounded-md border border-muted/80 bg-background/90 px-3 py-2 text-xs text-muted-foreground">{productShareUrl ?? productPreviewUrl}</p>
+                      {productCopyPresentation.message ? (
+                        <span aria-live="polite" className="text-[11px] text-muted-foreground">
+                          {productCopyPresentation.message}
+                        </span>
+                      ) : null}
                     </div>
 
-                    <div className="mt-6 flex flex-col gap-3">
-                      <span className="text-sm font-medium text-foreground">Önizleme</span>
-                      <div className="flex items-start gap-4 rounded-lg border border-dashed border-muted bg-muted/30 p-6">
-                        <Image
-                          alt="Ürün kare görseli"
-                          className="h-64 w-64 rounded-md object-contain shadow-sm"
-                          height={256}
-                          width={256}
-                          src={productPreviewUrl}
-                          unoptimized
-                        />
-                        <div className="flex flex-col gap-3">
-                          <Button asChild size="sm" variant="outline" className="w-32">
-                            <a download href={productPreviewUrl} rel="noreferrer" target="_blank">
-                              Görseli İndir
-                            </a>
-                          </Button>
+                    <div className="space-y-4 rounded-lg border border-dashed border-muted bg-muted/20 p-4">
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-foreground">Önizleme</p>
+                        <p className="text-xs text-muted-foreground">Oluşturulan kare görseli kontrol edin ve dilediğiniz formatta indirin.</p>
+                      </div>
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="flex h-56 w-56 items-center justify-center rounded-md border border-muted/80 bg-background/80 p-2 shadow-sm">
+                          <Image alt="Ürün kare görseli" className="h-[200px] w-[200px] rounded object-contain" height={200} width={200} src={productPreviewUrl} unoptimized />
                         </div>
+                        <Button asChild size="sm" variant="outline" className="w-full">
+                          <a download href={productPreviewUrl} rel="noreferrer" target="_blank">
+                            Görseli indir
+                          </a>
+                        </Button>
                       </div>
                     </div>
-                  </>
+                  </div>
                 )}
               </form>
             </CardContent>
@@ -1151,8 +1144,11 @@ export default function SquarePadAdminPage() {
         {activeTab === 'image' && (
           <Card>
             <CardHeader>
-              <CardTitle>URL ile Kare Görsel</CardTitle>
-              <CardDescription>Elinizdeki herhangi bir görsel bağlantısını kare ölçülere göre yeniden boyutlandırın.</CardDescription>
+              <SectionHeader
+                eyebrow="URL Tab"
+                title=""
+                description=""
+              />
             </CardHeader>
             <CardContent>
               <form className="space-y-6" onSubmit={handleImageSubmit}>
@@ -1170,6 +1166,7 @@ export default function SquarePadAdminPage() {
                       onInput={(event) => event.currentTarget.setCustomValidity('')}
                       required
                     />
+                    <InlineHint>CDN veya ürün sayfası üzerindeki görsel bağlantısını doğrudan kullanabilirsiniz.</InlineHint>
                   </div>
                   <div className="space-y-2">
                     <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="image-size-input">
@@ -1266,50 +1263,42 @@ export default function SquarePadAdminPage() {
                 </div>
 
                 {imagePreviewUrl && (
-                  <>
-                    <div className="mt-6 flex flex-col gap-2">
-                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Oluşturulan Görsel</span>
-                      <div className="rounded-md border border-muted bg-muted/30 px-3 py-3 text-xs text-muted-foreground">
-                        <p className="break-all leading-relaxed">{imageShareUrl ?? imagePreviewUrl}</p>
-                        <div className="mt-3 flex flex-wrap items-center gap-3">
-                          <Button
-                            type="button"
-                            className="shrink-0"
-                            variant={imageCopyPresentation.variant}
-                            size="sm"
-                            onClick={handleImageCopyShareUrl}
-                            disabled={!imageShareUrl}
-                          >
-                            {imageCopyPresentation.label}
-                          </Button>
-                          <span aria-live="polite" className="text-[11px] text-muted-foreground">
-                            {imageCopyPresentation.message}
-                          </span>
+                  <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,260px)]">
+                    <div className="space-y-4 rounded-lg border border-muted/70 bg-muted/20 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold text-foreground">Paylaşılabilir bağlantı</p>
+                          <p className="text-xs text-muted-foreground">URL’yi paylaşın veya otomasyonlarınıza ekleyin.</p>
                         </div>
+                        <Button type="button" variant={imageCopyPresentation.variant} size="sm" onClick={handleImageCopyShareUrl} disabled={!imageShareUrl}>
+                          {imageCopyPresentation.label}
+                        </Button>
                       </div>
+                      <p className="break-all rounded-md border border-muted/80 bg-background/90 px-3 py-2 text-xs text-muted-foreground">{imageShareUrl ?? imagePreviewUrl}</p>
+                      {imageCopyPresentation.message ? (
+                        <span aria-live="polite" className="text-[11px] text-muted-foreground">
+                          {imageCopyPresentation.message}
+                        </span>
+                      ) : null}
                     </div>
 
-                    <div className="mt-6 flex flex-col gap-3">
-                      <span className="text-sm font-medium text-foreground">Önizleme</span>
-                      <div className="flex items-start gap-4 rounded-lg border border-dashed border-muted bg-muted/30 p-6">
-                        <Image
-                          alt="Kare görsel önizleme"
-                          className="h-64 w-64 rounded-md object-contain shadow-sm"
-                          height={256}
-                          width={256}
-                          src={imagePreviewUrl}
-                          unoptimized
-                        />
-                        <div className="flex flex-col gap-3">
-                          <Button asChild size="sm" variant="outline" className="w-32">
-                            <a download href={imagePreviewUrl} rel="noreferrer" target="_blank">
-                              Görseli İndir
-                            </a>
-                          </Button>
+                    <div className="space-y-4 rounded-lg border border-dashed border-muted bg-muted/20 p-4">
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-foreground">Önizleme</p>
+                        <p className="text-xs text-muted-foreground">Seçilen görselin kare versiyonunu kontrol edin.</p>
+                      </div>
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="flex h-56 w-56 items-center justify-center rounded-md border border-muted/80 bg-background/80 p-2 shadow-sm">
+                          <Image alt="Kare görsel önizleme" className="h-[200px] w-[200px] rounded object-contain" height={200} width={200} src={imagePreviewUrl} unoptimized />
                         </div>
+                        <Button asChild size="sm" variant="outline" className="w-full">
+                          <a download href={imagePreviewUrl} rel="noreferrer" target="_blank">
+                            Görseli indir
+                          </a>
+                        </Button>
                       </div>
                     </div>
-                  </>
+                  </div>
                 )}
               </form>
             </CardContent>
@@ -1319,8 +1308,11 @@ export default function SquarePadAdminPage() {
         {activeTab === 'xml' && (
           <Card>
             <CardHeader>
-              <CardTitle>XML Feed Dönüştürücü</CardTitle>
-              <CardDescription>Mevcut ürün feed’inizdeki ek görsel bağlantılarını kare olarak güncelleyin. Kaynak XML URL’si zorunludur.</CardDescription>
+              <SectionHeader
+                eyebrow="XML Tab"
+                title=""
+                description=""
+              />
             </CardHeader>
             <CardContent>
               <form className="space-y-6" onSubmit={handleXmlSubmit}>
@@ -1339,6 +1331,7 @@ export default function SquarePadAdminPage() {
                       onInput={(event) => event.currentTarget.setCustomValidity('')}
                       required
                     />
+                    <InlineHint>Feed, kare görsellerle güncellenecek ve aynı parametrelerle paylaşılabilir bağlantı oluşturulacak.</InlineHint>
                   </div>
                   <div className="space-y-2">
                     <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="xml-size-input">
@@ -1434,27 +1427,35 @@ export default function SquarePadAdminPage() {
                   </Button>
                 </div>
 
-                {xmlShareUrl && (
-                  <div className="mt-6 flex flex-col gap-2">
-                    <span className="text-sm font-medium text-foreground">Paylaşılabilir Bağlantı</span>
-                    <div className="rounded-md border border-muted bg-muted/30 px-3 py-3 text-xs text-muted-foreground">
-                      <p className="break-all leading-relaxed">{xmlShareUrl}</p>
-                      <div className="mt-3 flex flex-wrap items-center gap-3">
-                        <Button type="button" className="shrink-0" variant={xmlCopyPresentation.variant} size="sm" onClick={handleXmlCopyShareUrl}>
-                          {xmlCopyPresentation.label}
-                        </Button>
-                        <span aria-live="polite" className="text-[11px] text-muted-foreground">
-                          {xmlCopyPresentation.message}
-                        </span>
+                {(xmlShareUrl || xmlPreview) && (
+                  <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+                    {xmlShareUrl ? (
+                      <div className="space-y-4 rounded-lg border border-muted/70 bg-muted/20 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="space-y-1">
+                            <p className="text-sm font-semibold text-foreground">Paylaşılabilir bağlantı</p>
+                            <p className="text-xs text-muted-foreground">Bu URL’yi paylaşarak kare görsellerle güncellenmiş feed’i servis edin.</p>
+                          </div>
+                          <Button type="button" variant={xmlCopyPresentation.variant} size="sm" onClick={handleXmlCopyShareUrl}>
+                            {xmlCopyPresentation.label}
+                          </Button>
+                        </div>
+                        <p className="break-all rounded-md border border-muted/80 bg-background/90 px-3 py-2 text-xs text-muted-foreground">{xmlShareUrl}</p>
+                        {xmlCopyPresentation.message ? (
+                          <span aria-live="polite" className="text-[11px] text-muted-foreground">
+                            {xmlCopyPresentation.message}
+                          </span>
+                        ) : null}
                       </div>
-                    </div>
-                  </div>
-                )}
+                    ) : null}
 
-                {xmlPreview && (
-                  <div className="mt-6 flex flex-col gap-2">
-                    <span className="text-sm font-medium text-foreground">Önizleme</span>
-                    <pre className="relative max-h-96 overflow-auto rounded-lg border border-border bg-[#0f1524] p-4 text-xs text-[#E8EFFE] shadow-lg ring-1 ring-black/5 before:absolute before:left-4 before:top-4 before:flex before:gap-1 before:rounded-full before:bg-transparent before:content-['']">
+                    {xmlPreview ? (
+                      <div className="space-y-2">
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold text-foreground">Önizleme</p>
+                          <p className="text-xs text-muted-foreground">XML çıktısının ilgili bölümlerini kontrol edin.</p>
+                        </div>
+                        <pre className="relative max-h-96 overflow-auto rounded-lg border border-border bg-[#0f1524] p-4 text-xs text-[#E8EFFE] shadow-lg ring-1 ring-black/5 before:absolute before:left-4 before:top-4 before:flex before:gap-1 before:rounded-full before:bg-transparent before:content-['']">
                       <span className="absolute left-4 top-3 flex gap-1">
                         <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f56]" />
                         <span className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
@@ -1497,8 +1498,10 @@ export default function SquarePadAdminPage() {
                               </span>
                             );
                           })}
-                      </code>
-                    </pre>
+                        </code>
+                      </pre>
+                    </div>
+                    ) : null}
                   </div>
                 )}
               </form>
@@ -1562,7 +1565,7 @@ export default function SquarePadAdminPage() {
                     ? 'Görseller yükleniyor…'
                     : productImages.length
                       ? `${productImages.length} görsel`
-                      : 'Görseller seçildiğinde yüklenir';
+                      : '';
 
                   return (
                     <div
@@ -1576,7 +1579,9 @@ export default function SquarePadAdminPage() {
                       >
                         <div>
                           <h3 className="text-sm font-medium text-foreground">{product.name}</h3>
-                          <p className="text-xs text-muted-foreground">{product.id}</p>
+                          <p className="text-xs text-muted-foreground">
+                            SKU: {product.variants.find((variant) => variant.sku)?.sku ?? 'Bilgi yok'}
+                          </p>
                         </div>
                         <span className="text-xs text-muted-foreground">{imageCountLabel}</span>
                       </button>
