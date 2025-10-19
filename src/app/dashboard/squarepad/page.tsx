@@ -917,6 +917,7 @@ export default function SquarePadAdminPage() {
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <span className="tracking-wide">&copy; {currentYear} SquarePad</span>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <span>Developed by</span>
             <a className="font-medium text-foreground transition hover:text-primary" href="https://osmankoc.dev" rel="noopener noreferrer" target="_blank">
               Osman Koç
             </a>
