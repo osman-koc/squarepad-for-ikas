@@ -24,9 +24,11 @@ function CallbackContent() {
         return;
       }
 
-      router.push('/authorize-store').catch(() => {
+      try {
+        router.push('/authorize-store');
+      } catch {
         window.location.replace('/authorize-store');
-      });
+      }
     })();
   }, [router, searchParams]);
 

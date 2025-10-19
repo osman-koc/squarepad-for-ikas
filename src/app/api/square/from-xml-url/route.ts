@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const DEFAULT_FEED_URL =
-  'https://ikas-exporter-app.ikasapps.com/api/exports/af77e1e5-3d3a-4925-8228-8eb51f200a33/78fd3ffe-e9b9-43a7-8bd0-b35599149609.xml?templateType=9&domainUrl=https://freedom.com.tr/&salesChannelId=undefined&inactiveProducts=false&storeName=freedomcomtr&showOutStocks=false&showStockCount=false&showCurrency=true&showSalePrice=true&showMpn=false&showProductType=false&separateCategoriesWithComma=false';
+const DEFAULT_FEED_URL = process.env.SQUARE_DEFAULT_FEED_URL ?? null;
 
 const PASS_THROUGH_PARAMS = ['size', 'bg', 'align', 'format'] as const;
 
