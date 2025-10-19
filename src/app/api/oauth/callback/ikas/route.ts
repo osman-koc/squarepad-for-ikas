@@ -25,14 +25,17 @@ const callbackSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     // Parse the request URL to extract query parameters
-    const url = new URL(request.url as string, `http://${request.headers.get('host')}`);
-    const { searchParams } = url;
+    const { searchParams } = request.nextUrl;
 
     // Validate the incoming request parameters (code, state, signature)
+    const codeParam = searchParams.get('code');
+    const stateParam = searchParams.get('state');
+    const signatureParam = searchParams.get('signature');
+
     const validation = validateRequest(callbackSchema, {
-      code: searchParams.get('code'),
-      state: searchParams.get('state'),
-      signature: searchParams.get('signature'),
+      code: codeParam,
+      state: stateParam ?? undefined,
+      signature: signatureParam ?? undefined,
     });
 
     if (!validation.success) {
@@ -62,7 +65,7 @@ export async function GET(request: NextRequest) {
         redirect_uri: getRedirectUri(request.headers.get('host')!),
       },
       {
-        storeName: (session.storeName || 'api') as string,
+        storeName: ((session.storeName as string | undefined) ?? searchParams.get('storeName') ?? 'api') as string,
       },
     );
 
