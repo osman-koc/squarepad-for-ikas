@@ -44,7 +44,7 @@ export default function SquarePadAdminPage() {
 
   const [productForm, setProductForm] = useState({
     productId: '',
-    index: '',
+    index: '1',
     size: '1024',
     bg: '#ffffff',
     align: 'center' as AlignOption,
@@ -53,6 +53,7 @@ export default function SquarePadAdminPage() {
   const [productPreviewUrl, setProductPreviewUrl] = useState<string | null>(null);
   const [productLoading, setProductLoading] = useState(false);
   const [productError, setProductError] = useState<string | null>(null);
+  const [productBgDraft, setProductBgDraft] = useState('#ffffff');
 
   const [imageForm, setImageForm] = useState({
     img: '',
@@ -64,6 +65,7 @@ export default function SquarePadAdminPage() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [imageBgDraft, setImageBgDraft] = useState('#ffffff');
 
   const [xmlForm, setXmlForm] = useState({
     source: '',
@@ -111,12 +113,20 @@ export default function SquarePadAdminPage() {
   }, [productPreviewUrl]);
 
   useEffect(() => {
+    setProductBgDraft(productForm.bg);
+  }, [productForm.bg]);
+
+  useEffect(() => {
     return () => {
       if (imagePreviewUrl) {
         URL.revokeObjectURL(imagePreviewUrl);
       }
     };
   }, [imagePreviewUrl]);
+
+  useEffect(() => {
+    setImageBgDraft(imageForm.bg);
+  }, [imageForm.bg]);
 
   useEffect(() => {
     setXmlBgDraft(xmlForm.bg);
@@ -454,12 +464,34 @@ export default function SquarePadAdminPage() {
                     <label className="text-sm font-medium text-foreground" htmlFor="product-bg-input">
                       Arka Plan
                     </label>
-                    <Input
-                      id="product-bg-input"
-                      type="color"
-                      value={productForm.bg}
-                      onChange={(event) => setProductForm((prev) => ({ ...prev, bg: event.target.value }))}
-                    />
+                    <div className="flex items-center gap-3">
+                      <Input
+                        id="product-bg-input"
+                        className="max-w-[120px]"
+                        type="color"
+                        value={productForm.bg}
+                        onChange={(event) => {
+                          const nextValue = event.target.value;
+                          setProductBgDraft(nextValue);
+                          setProductForm((prev) => ({ ...prev, bg: nextValue }));
+                        }}
+                      />
+                      <Input
+                        aria-label="Arka plan hex"
+                        className="max-w-[140px]"
+                        value={productBgDraft.toUpperCase()}
+                        onChange={(event) => {
+                          const raw = event.target.value.replace(/[^0-9A-Fa-f#]/g, '');
+                          const withoutHash = raw.startsWith('#') ? raw.slice(1) : raw;
+                          const trimmed = withoutHash.slice(0, 6);
+                          const withHash = `#${trimmed.toLowerCase()}`;
+                          setProductBgDraft(withHash);
+                          if (trimmed.length === 6) {
+                            setProductForm((prev) => ({ ...prev, bg: withHash }));
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -568,12 +600,34 @@ export default function SquarePadAdminPage() {
                     <label className="text-sm font-medium text-foreground" htmlFor="image-bg-input">
                       Arka Plan
                     </label>
-                    <Input
-                      id="image-bg-input"
-                      type="color"
-                      value={imageForm.bg}
-                      onChange={(event) => setImageForm((prev) => ({ ...prev, bg: event.target.value }))}
-                    />
+                    <div className="flex items-center gap-3">
+                      <Input
+                        id="image-bg-input"
+                        className="max-w-[120px]"
+                        type="color"
+                        value={imageForm.bg}
+                        onChange={(event) => {
+                          const nextValue = event.target.value;
+                          setImageBgDraft(nextValue);
+                          setImageForm((prev) => ({ ...prev, bg: nextValue }));
+                        }}
+                      />
+                      <Input
+                        aria-label="Arka plan hex"
+                        className="max-w-[140px]"
+                        value={imageBgDraft.toUpperCase()}
+                        onChange={(event) => {
+                          const raw = event.target.value.replace(/[^0-9A-Fa-f#]/g, '');
+                          const withoutHash = raw.startsWith('#') ? raw.slice(1) : raw;
+                          const trimmed = withoutHash.slice(0, 6);
+                          const withHash = `#${trimmed.toLowerCase()}`;
+                          setImageBgDraft(withHash);
+                          if (trimmed.length === 6) {
+                            setImageForm((prev) => ({ ...prev, bg: withHash }));
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
 
