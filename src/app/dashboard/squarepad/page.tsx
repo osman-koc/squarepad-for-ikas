@@ -43,6 +43,7 @@ export default function SquarePadAdminPage() {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareCopyState, setShareCopyState] = useState<'idle' | 'success' | 'error'>('idle');
   const shareCopyResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currentYear = new Date().getFullYear();
 
   const [productForm, setProductForm] = useState({
     productId: '',
@@ -443,8 +444,8 @@ export default function SquarePadAdminPage() {
         : '';
 
   return (
-    <div className="min-h-screen bg-background pb-12 pt-10 text-foreground">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pb-12 pt-10">
         <header className="space-y-3">
           <div className="flex items-center gap-4">
             <Image alt="SquarePad Logo" className="h-12 w-12 rounded-xl border border-muted bg-card p-1 shadow-sm" height={48} width={48} src="/square-logo.svg" />
@@ -912,6 +913,22 @@ export default function SquarePadAdminPage() {
           </Card>
         )}
       </div>
+      <footer className="border-t border-muted bg-background">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <span className="tracking-wide">&copy; {currentYear} SquarePad</span>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <a className="font-medium text-foreground transition hover:text-primary" href="https://osmankoc.dev" rel="noopener noreferrer" target="_blank">
+              Osman Koç
+            </a>
+            <span className="hidden text-muted-foreground sm:inline" aria-hidden="true">
+              •
+            </span>
+            <a className="text-foreground transition hover:text-primary" href="mailto:me@osmankoc.dev">
+              me@osmankoc.dev
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
