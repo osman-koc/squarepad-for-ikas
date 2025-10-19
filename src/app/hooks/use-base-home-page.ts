@@ -43,7 +43,7 @@ export function useBaseHomePage() {
 
         if (existingToken) {
           // Valid token found - user is already authenticated, proceed to main application
-          router.push('/dashboard');
+          router.push('/dashboard/squarepad');
           return;
         }
 

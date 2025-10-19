@@ -25,6 +25,34 @@ export interface GetAuthorizedAppQuery {
   getAuthorizedApp: GetAuthorizedAppQueryData;
 }
 
+export type ListProductsWithImagesQueryVariables = {
+  page?: number;
+  limit?: number;
+}
+
+export type ListProductsWithImagesQueryData = {
+  data: Array<{
+  id: string;
+  name: string;
+  variants: Array<{
+  id: string;
+  images?: Array<{
+  imageId?: string;
+  isMain: boolean;
+  order: number;
+}>;
+}>;
+}>;
+  page: number;
+  limit: number;
+  hasNext: boolean;
+  count: number;
+}
+
+export interface ListProductsWithImagesQuery {
+  listProduct: ListProductsWithImagesQueryData;
+}
+
 export class GeneratedQueries {
   client: BaseGraphQLAPIClient<any>;
 
@@ -55,6 +83,32 @@ export class GeneratedQueries {
   }
 `;
     return this.client.query<Partial<GetAuthorizedAppQuery>>({ query });
+  }
+
+  async listProductsWithImages(variables: ListProductsWithImagesQueryVariables): Promise<APIResult<Partial<ListProductsWithImagesQuery>>> {
+    const query = `
+  query listProductsWithImages($page: Int = 1, $limit: Int = 1) {
+    listProduct(pagination: { page: $page, limit: $limit }) {
+      data {
+        id
+        name
+        variants {
+          id
+          images {
+            imageId
+            isMain
+            order
+          }
+        }
+      }
+      page
+      limit
+      hasNext
+      count
+    }
+  }
+`;
+    return this.client.query<Partial<ListProductsWithImagesQuery>>({ query, variables });
   }
 }
 

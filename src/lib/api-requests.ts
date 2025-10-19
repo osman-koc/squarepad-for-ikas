@@ -28,4 +28,45 @@ export const ApiRequests = {
   ikas: {
     getMerchant: (token: string) => makeGetRequest<GetMerchantApiResponse>({ url: '/api/ikas/get-merchant', token }),
   },
+  
+  square: {
+    /**
+     * Ürün ID'den kare görsel oluşturur (backend: /api/square/from-product-id)
+     */
+    fromProductId: (
+      token: string,
+      params: {
+        productId: string;
+        index?: number;
+        size?: number;
+        bg?: string;
+        format?: string;
+        align?: string;
+      }
+    ) =>
+      makeGetRequest<Blob>({
+        url: '/api/square/from-product-id',
+        data: params,
+        token,
+      }),
+
+    /**
+     * Görsel URL'den kare oluşturur (backend: /api/square/from-image-url)
+     */
+    fromImageUrl: (
+      token: string,
+      params: {
+        img: string;
+        size?: number;
+        bg?: string;
+        format?: string;
+        align?: string;
+      }
+    ) =>
+      makeGetRequest<Blob>({
+        url: '/api/square/from-image-url',
+        data: params,
+        token,
+      }),
+  },
 };
