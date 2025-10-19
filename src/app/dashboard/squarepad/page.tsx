@@ -3,6 +3,7 @@
 import { AppBridgeHelper } from '@ikas/app-helpers';
 import { Info } from 'lucide-react';
 import Image from 'next/image';
+import { flushSync } from 'react-dom';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TokenHelpers } from '@/helpers/token-helpers';
 import { ApiRequests } from '@/lib/api-requests';
@@ -492,13 +493,25 @@ export default function SquarePadAdminPage() {
               <CardDescription>İhtiyacınıza en uygun yöntemi seçerek kare görseller üretin.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 rounded-xl border border-muted bg-muted/30 p-1">
               {tabItems.map((tab) => (
                 <Button
                   key={tab.id}
-                  variant={activeTab === tab.id ? 'default' : 'ghost'}
-                  onClick={() => setActiveTab(tab.id)}
-                  disabled={activeTab === tab.id}
+                  type="button"
+                  variant="ghost"
+                  aria-pressed={activeTab === tab.id}
+                  className={`min-w-[150px] flex-1 px-4 py-2 text-sm font-medium transition-colors duration-75 ${
+                    activeTab === tab.id
+                      ? 'bg-primary text-primary-foreground shadow-sm ring-1 ring-primary'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                  onClick={() => {
+                    if (activeTab !== tab.id) {
+                      flushSync(() => {
+                        setActiveTab(tab.id);
+                      });
+                    }
+                  }}
                 >
                   {tab.label}
                 </Button>
@@ -925,7 +938,7 @@ export default function SquarePadAdminPage() {
 
                 {shareUrl && (
                   <div className="mt-6 flex flex-col gap-2">
-                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Paylaşılabilir Bağlantı</span>
+                    <span className="text-sm font-medium text-foreground">Paylaşılabilir Bağlantı</span>
                     <div className="rounded-md border border-muted bg-muted/30 px-3 py-3 text-xs text-muted-foreground">
                       <p className="break-all leading-relaxed">{shareUrl}</p>
                       <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -943,8 +956,50 @@ export default function SquarePadAdminPage() {
                 {xmlPreview && (
                   <div className="mt-6 flex flex-col gap-2">
                     <span className="text-sm font-medium text-foreground">Önizleme</span>
-                    <pre className="max-h-96 overflow-auto rounded-lg border border-muted bg-muted/20 p-4 text-xs text-foreground/80">
-                      {xmlPreview}
+                    <pre className="relative max-h-96 overflow-auto rounded-lg border border-border bg-[#0f1524] p-4 text-xs text-[#E8EFFE] shadow-lg ring-1 ring-black/5 before:absolute before:left-4 before:top-4 before:flex before:gap-1 before:rounded-full before:bg-transparent before:content-['']">
+                      <span className="absolute left-4 top-3 flex gap-1">
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f56]" />
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#27c93f]" />
+                      </span>
+                      <code className="block whitespace-pre-wrap break-words bg-transparent pl-0 pt-6 text-left text-xs font-mono text-inherit" data-language="xml">
+                        <span className="text-[#59a6ff]">&lt;?xml</span>
+                        <span className="text-[#fdb784]"> version=</span>
+                        <span className="text-[#f8d273]">&quot;1.0&quot;</span>
+                        <span className="text-[#fdb784]"> encoding=</span>
+                        <span className="text-[#f8d273]">&quot;UTF-8&quot;</span>
+                        <span className="text-[#59a6ff]">?&gt;</span>
+                        {'\n'}
+                        {xmlPreview
+                          .split('\n')
+                          .filter((line, index) => !(index === 0 && line.startsWith('<?xml')))
+                          .map((line, index) => {
+                            const trimmed = line.trim();
+                            if (!trimmed) {
+                              return '\n';
+                            }
+
+                            const indent = line.match(/^\s*/)?.[0] ?? '';
+                            const safeIndent = indent.replace(/\s/g, '\u00A0');
+                            const isClosing = trimmed.startsWith('</');
+                            const isSelfClosing = trimmed.endsWith('/>');
+
+                            return (
+                              <span key={`${line}-${index}`} className="block text-[#d1dcff]">
+                                <span dangerouslySetInnerHTML={{ __html: safeIndent }} />
+                                {trimmed.replace(/(&lt;\/?)([^&\s>]+)([^&]*?)(\/?&gt;)/g, (_match: string, open: string, tagName: string, attrs: string, close: string) => {
+                                  const attrFormatted = attrs.replace(/([a-zA-Z_:][-a-zA-Z0-9_:.]*)(\s*=\s*)("[^"]*"|'[^']*')/g, (_attrMatch: string, attrName: string, equals: string, value: string) => {
+                                    const safeValue = value.replace(/"/g, '&quot;');
+                                    return `<span class="text-[#86e1c4]">${attrName}</span>${equals}<span class="text-[#f8d273]">${safeValue}</span>`;
+                                  });
+
+                                  return `<span class="${isClosing ? 'text-[#ff7f90]' : 'text-[#59a6ff]'}">${open}${tagName}${attrFormatted}${close}</span>`;
+                                })}
+                                {isSelfClosing || isClosing ? '' : ''}
+                              </span>
+                            );
+                          })}
+                      </code>
                     </pre>
                   </div>
                 )}
