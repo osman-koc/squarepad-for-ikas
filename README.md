@@ -1,6 +1,6 @@
-# ikas App Starter (Next.js 15)
+# SquarePad for ikas
 
-Modern Next.js 15 App Router starter app for building ikas Admin apps with OAuth, Prisma, GraphQL (codegen), Tailwind + shadcn/ui, and secure server routes.
+SquarePad is a Next.js 15 App Router experience for ikas merchants that bundles OAuth, Prisma, GraphQL (codegen), Tailwind + shadcn/ui, and secure server routes to deliver product-catalog powered square image tooling inside the ikas dashboard.
 
 ## 🚀 Features
 
@@ -11,6 +11,7 @@ Modern Next.js 15 App Router starter app for building ikas Admin apps with OAuth
 - **Tailwind CSS v4 + shadcn/ui** components
 - **Iron Session** server-side session management
 - **Frontend ↔ Backend bridge** via typed API helpers
+- **SquarePad admin experience** with modular components for product catalog browsing, image transformation, and XML feed updates (iframe friendly)
 
 ## 📁 Project Structure
 
@@ -31,6 +32,15 @@ src/
 │
 ├─ components/
 │  ├─ home-page/index.tsx                # Simple authenticated UI
+│  ├─ squarepad/                         # SquarePad page components
+│  │  ├─ image-tab.tsx
+│  │  ├─ info-tooltip.tsx
+│  │  ├─ inline-hint.tsx
+│  │  ├─ product-selection-dialog.tsx
+│  │  ├─ product-tab.tsx
+│  │  ├─ section-header.tsx
+│  │  ├─ squarepad-header.tsx
+│  │  └─ tab-switcher.tsx
 │  └─ ui/*                               # shadcn/ui components
 │
 ├─ globals/
@@ -57,6 +67,12 @@ src/
    └─ auth-token/                        # Token store via Prisma
       ├─ index.ts                        # AuthToken interface
       └─ manager.ts                      # CRUD with Prisma
+
+├─ constants/
+│  └─ squarepad.ts                       # Shared UI constants (align/format lists)
+├─ types/
+│  ├─ squarepad.ts                       # Shared SquarePad domain types
+│  └─ ui.ts                              # Generic UI helper types (copy feedback, etc.)
 ```
 
 ## 🛠️ Setup
@@ -184,6 +200,18 @@ pnpm prisma:studio
 
 - Tailwind v4 with CSS file at `src/app/globals.css`.
 - shadcn/ui components under `src/components/ui/*`.
+- SquarePad UI is composed from reusable building blocks in `src/components/squarepad/*` so the dashboard page stays small and iframe integrations can reuse the same primitives.
+
+## 📸 SquarePad Dashboard
+
+`src/app/dashboard/squarepad/page.tsx` implements the SquarePad admin tool that merchants access through the ikas dashboard iframe. Başlıca akışlar:
+
+- **Ürün Katalog sekmesi** ürünleri aramak, varyant SKU’larına göre filtrelemek, görsel seçmek ve kare görsel oluşturmak için ikas GraphQL API’sinden gelen verileri kullanır. Görsel seçimi `ProductSelectionDialog` ile yapılır.
+- **Görsel URL sekmesi** herhangi bir görsel linkini kare formata dönüştürmenize olanak tanır.
+- **XML Feed sekmesi** bir feed içindeki görselleri kare URL’lerle güncelleyerek paylaşılabilir yeni feed çıktısı üretir.
+- Tüm sekmeler `SquarePadTabSwitcher`, `SquarePadHeader`, `InlineHint`, `InfoTooltip` gibi küçük bileşenlerle modülerleştirilmiştir. Tür tanımları `src/types/squarepad.ts`, sabitler `src/constants/squarepad.ts` dosyasında tutulur.
+
+Iframe entegrasyonu sırasında token yönetimi `TokenHelpers` üzerinden yapılır; backend `/api/ikas/products` ve `/api/ikas/product-images` uç noktaları GraphQL isteklerini proksi eder.
 
 ## 🧰 MCP Helpers
 
