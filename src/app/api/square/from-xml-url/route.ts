@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const DEFAULT_FEED_URL = process.env.SQUARE_DEFAULT_FEED_URL ?? null;
-
 const PASS_THROUGH_PARAMS = ['size', 'bg', 'align', 'format'] as const;
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
 
 function buildSquareUrl(origin: string, imageUrl: string, params: URLSearchParams): string {
   const url = new URL('/api/square/from-image-url', origin);
@@ -53,14 +60,15 @@ function replaceAdditionalImageLinks(xml: string, origin: string, params: URLSea
       return match;
     }
 
-    const replacedContent = `${leadingWhitespace}${useCdata ? `<![CDATA[${transformed}]]>` : transformed}${trailingWhitespace}`;
+    const safeContent = useCdata ? `<![CDATA[${transformed}]]>` : escapeXml(transformed);
+    const replacedContent = `${leadingWhitespace}${safeContent}${trailingWhitespace}`;
     return `${openTag}${replacedContent}${closeTag}`;
   });
 }
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
-  const sourceUrl = searchParams.get('source') ?? DEFAULT_FEED_URL;
+  const sourceUrl = searchParams.get('source');
 
   if (!sourceUrl) {
     return NextResponse.json({ error: 'missing_source' }, { status: 400 });

@@ -2,7 +2,7 @@
 
 import { AppBridgeHelper } from '@ikas/app-helpers';
 import Image from 'next/image';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TokenHelpers } from '@/helpers/token-helpers';
 import { ApiRequests } from '@/lib/api-requests';
 import { Button } from '@/components/ui/button';
@@ -40,7 +40,9 @@ export default function SquarePadAdminPage() {
   const [token, setToken] = useState<string | null>(null);
   const [tokenError, setTokenError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('xml');
-  const [iframeBaseUrl, setIframeBaseUrl] = useState<string>('');
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareCopyState, setShareCopyState] = useState<'idle' | 'success' | 'error'>('idle');
+  const shareCopyResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [productForm, setProductForm] = useState({
     productId: '',
@@ -99,12 +101,6 @@ export default function SquarePadAdminPage() {
   }, []);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIframeBaseUrl(`${window.location.origin}/api/square`);
-    }
-  }, []);
-
-  useEffect(() => {
     return () => {
       if (productPreviewUrl) {
         URL.revokeObjectURL(productPreviewUrl);
@@ -131,6 +127,22 @@ export default function SquarePadAdminPage() {
   useEffect(() => {
     setXmlBgDraft(xmlForm.bg);
   }, [xmlForm.bg]);
+
+  useEffect(() => {
+    if (shareCopyResetTimer.current) {
+      clearTimeout(shareCopyResetTimer.current);
+      shareCopyResetTimer.current = null;
+    }
+    setShareCopyState('idle');
+  }, [shareUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (shareCopyResetTimer.current) {
+        clearTimeout(shareCopyResetTimer.current);
+      }
+    };
+  }, []);
 
   const tabItems = useMemo(
     () =>
@@ -298,8 +310,16 @@ export default function SquarePadAdminPage() {
         return;
       }
 
+      const trimmedSourceInput = xmlForm.source.trim();
+      if (!trimmedSourceInput) {
+        setXmlError('Lütfen kaynak XML URL’sini girin.');
+        setShareUrl(null);
+        return;
+      }
+
       setXmlLoading(true);
       setXmlError(null);
+      setShareUrl(null);
 
       try {
         const params: {
@@ -312,9 +332,7 @@ export default function SquarePadAdminPage() {
           align: xmlForm.align,
         };
 
-        if (xmlForm.source.trim()) {
-          params.source = xmlForm.source.trim();
-        }
+        params.source = trimmedSourceInput;
 
         const sizeValue = parseOptionalNumber(xmlForm.size);
         if (sizeValue !== undefined) {
@@ -336,16 +354,93 @@ export default function SquarePadAdminPage() {
         }
 
         setXmlPreview(response.data);
+
+        const shareTarget = new URL('/api/square/from-xml-url', window.location.origin);
+        const shareParams = new URLSearchParams();
+
+        const resolvedSource = params.source ?? trimmedSourceInput;
+        if (resolvedSource) {
+          shareParams.set('source', resolvedSource);
+        }
+        if (params.size) {
+          shareParams.set('size', params.size.toString());
+        }
+        if (params.bg) {
+          shareParams.set('bg', params.bg);
+        }
+        if (params.format) {
+          shareParams.set('format', params.format);
+        }
+        if (params.align) {
+          shareParams.set('align', params.align);
+        }
+
+        const shareQuery = shareParams.toString();
+        if (shareQuery) {
+          shareTarget.search = shareQuery;
+        }
+
+        setShareUrl(shareTarget.toString());
       } catch (error) {
         const message = error instanceof Error ? error.message : 'XML dönüştürme sırasında hata oluştu.';
         setXmlError(message);
         setXmlPreview('');
+        setShareUrl(null);
       } finally {
         setXmlLoading(false);
       }
     },
     [token, xmlForm],
   );
+
+  const handleCopyShareUrl = useCallback(async () => {
+    if (!shareUrl) {
+      return;
+    }
+
+    const scheduleReset = () => {
+      if (shareCopyResetTimer.current) {
+        clearTimeout(shareCopyResetTimer.current);
+      }
+      shareCopyResetTimer.current = setTimeout(() => {
+        setShareCopyState('idle');
+        shareCopyResetTimer.current = null;
+      }, 2500);
+    };
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = shareUrl;
+        textarea.style.position = 'fixed';
+        textarea.style.top = '-9999px';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (!successful) {
+          throw new Error('copy_failed');
+        }
+      }
+      setShareCopyState('success');
+      scheduleReset();
+    } catch {
+      setShareCopyState('error');
+      scheduleReset();
+    }
+  }, [shareUrl]);
+
+  const copyButtonLabel = shareCopyState === 'success' ? 'Kopyalandı!' : shareCopyState === 'error' ? 'Tekrar Dene' : 'Kopyala';
+  const copyButtonVariant = shareCopyState === 'success' ? 'default' : shareCopyState === 'error' ? 'destructive' : 'outline';
+  const copyStatusMessage =
+    shareCopyState === 'success'
+      ? 'Bağlantı panoya kopyalandı.'
+      : shareCopyState === 'error'
+        ? 'Kopyalama başarısız oldu, lütfen tekrar deneyin.'
+        : '';
 
   return (
     <div className="min-h-screen bg-background pb-12 pt-10 text-foreground">
@@ -398,6 +493,8 @@ export default function SquarePadAdminPage() {
                       placeholder="örn. gid://ikas/Product/123"
                       value={productForm.productId}
                       onChange={(event) => setProductForm((prev) => ({ ...prev, productId: event.target.value }))}
+                      onInvalid={(event) => event.currentTarget.setCustomValidity('Lütfen ürün ID bilgisini girin.')}
+                      onInput={(event) => event.currentTarget.setCustomValidity('')}
                       required
                     />
                   </div>
@@ -546,6 +643,8 @@ export default function SquarePadAdminPage() {
                       placeholder="https://cdn.ikas.com/media/product-image.jpg"
                       value={imageForm.img}
                       onChange={(event) => setImageForm((prev) => ({ ...prev, img: event.target.value }))}
+                      onInvalid={(event) => event.currentTarget.setCustomValidity('Lütfen dönüştürülecek görsel URL’sini girin.')}
+                      onInput={(event) => event.currentTarget.setCustomValidity('')}
                       required
                     />
                   </div>
@@ -668,9 +767,7 @@ export default function SquarePadAdminPage() {
           <Card>
             <CardHeader>
               <CardTitle>XML Feed Dönüştürücü</CardTitle>
-              <CardDescription>
-                &lt;g:additional_image_link&gt; girdilerini Square servisinden dönen kare görsellerle değiştirir. Varsayılan feed URL&apos;sini kullanmak için kaynak boş bırakabilirsiniz.
-              </CardDescription>
+              <CardDescription>&lt;g:additional_image_link&gt; girdilerini Square servisinden dönen kare görsellerle değiştirir. Kaynak XML URL’si zorunludur.</CardDescription>
             </CardHeader>
             <CardContent>
               <form className="space-y-6" onSubmit={handleXmlSubmit}>
@@ -681,9 +778,12 @@ export default function SquarePadAdminPage() {
                     </label>
                     <Input
                       id="xml-source-input"
-                      placeholder="Boş bırakılırsa varsayılan feed kullanılır."
+                      placeholder="https://example.com/feed.xml"
                       value={xmlForm.source}
                       onChange={(event) => setXmlForm((prev) => ({ ...prev, source: event.target.value }))}
+                      onInvalid={(event) => event.currentTarget.setCustomValidity('Lütfen kaynak XML URL’sini girin.')}
+                      onInput={(event) => event.currentTarget.setCustomValidity('')}
+                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -774,12 +874,24 @@ export default function SquarePadAdminPage() {
                   <Button type="submit" disabled={xmlLoading || !token}>
                     {xmlLoading ? 'Dönüştürülüyor…' : 'XML Feed Oluştur'}
                   </Button>
-                  {iframeBaseUrl && (
-                    <span className="text-xs text-muted-foreground">
-                      Paylaşılabilir temel URL: <code className="rounded bg-muted px-2 py-1">{`${iframeBaseUrl}/from-xml-url`}</code>
-                    </span>
-                  )}
                 </div>
+
+                {shareUrl && (
+                  <div className="mt-6 flex flex-col gap-2">
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Paylaşılabilir Link</span>
+                    <div className="rounded-md border border-muted bg-muted/30 px-3 py-3 text-xs text-muted-foreground">
+                      <p className="break-all leading-relaxed">{shareUrl}</p>
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        <Button type="button" className="shrink-0" variant={copyButtonVariant} size="sm" onClick={handleCopyShareUrl}>
+                          {copyButtonLabel}
+                        </Button>
+                        <span aria-live="polite" className="text-[11px] text-muted-foreground">
+                          {copyStatusMessage}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {xmlPreview && (
                   <div className="mt-6 flex flex-col gap-2">
