@@ -19,25 +19,42 @@ export const GET_AUTHORIZED_APP = gql`
   }
 `;
 
-export const LIST_PRODUCTS_WITH_IMAGES = gql`
-  query listProductsWithImages($page: Int = 1, $limit: Int = 1) {
-    listProduct(pagination: { page: $page, limit: $limit }) {
+export const LIST_PRODUCTS = gql`
+  query ListProducts($pagination: PaginationInput, $search: String, $sku: StringFilterInput) {
+    listProduct(pagination: $pagination, search: $search, sku: $sku, sort: "updatedAt:desc") {
       data {
         id
         name
         variants {
           id
-          images {
-            imageId
-            isMain
-            order
-          }
+          sku
         }
       }
       page
       limit
       hasNext
       count
+    }
+  }
+`;
+
+export const GET_PRODUCT_IMAGES = gql`
+  query ProductImages($id: StringFilterInput!) {
+    listProduct(id: $id, pagination: { page: 1, limit: 1 }) {
+      data {
+        id
+        name
+        variants {
+          id
+          sku
+          images {
+            imageId
+            fileName
+            isMain
+            order
+          }
+        }
+      }
     }
   }
 `;

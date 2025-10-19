@@ -43,6 +43,65 @@ export const ApiRequests = {
         url: '/api/ikas/get-merchant',
         token,
       }),
+    listProducts: (
+      token: string,
+      params: {
+        page?: number;
+        limit?: number;
+        search?: string;
+        sku?: string;
+      } = {},
+    ) =>
+      makeGetRequest<{
+        data: {
+          items: Array<{
+            id: string;
+            name: string;
+            variants: Array<{
+              id: string;
+              sku: string | null;
+            }>;
+          }>;
+          pagination: {
+            page: number;
+            limit: number;
+            count: number;
+            hasNext: boolean;
+          };
+        };
+      }>({
+        url: '/api/ikas/products',
+        data: params,
+        token,
+      }),
+    getProductImages: (token: string, productId: string) =>
+      makeGetRequest<{
+        data: {
+          product: {
+            id: string;
+            name: string;
+            variants: Array<{
+              id: string;
+              sku: string | null;
+            }>;
+            images: Array<{
+              imageId: string;
+              url: string;
+              isMain: boolean;
+              order: number;
+              fileName?: string;
+              variants: Array<{
+                id: string;
+                sku: string | null;
+              }>;
+            }>;
+          };
+        };
+      }>({
+        url: '/api/ikas/product-images',
+        data: { productId },
+        token,
+      }),
   },
 
   square: {

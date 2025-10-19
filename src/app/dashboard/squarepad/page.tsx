@@ -4,12 +4,13 @@ import { AppBridgeHelper } from '@ikas/app-helpers';
 import { Info } from 'lucide-react';
 import Image from 'next/image';
 import { flushSync } from 'react-dom';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject, type Dispatch, type SetStateAction } from 'react';
 import { TokenHelpers } from '@/helpers/token-helpers';
 import { ApiRequests } from '@/lib/api-requests';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const alignOptions = ['center', 'top', 'bottom', 'left', 'right'] as const;
 type AlignOption = (typeof alignOptions)[number];
@@ -18,6 +19,26 @@ const formatOptions = ['auto', 'jpeg', 'png', 'webp', 'avif'] as const;
 type FormatOption = (typeof formatOptions)[number];
 
 type TabId = 'product' | 'image' | 'xml';
+
+type ProductVariantSummary = {
+  id: string;
+  sku: string | null;
+};
+
+type ProductImageOption = {
+  imageId: string;
+  url: string;
+  isMain: boolean;
+  order: number;
+  fileName?: string;
+  variants: ProductVariantSummary[];
+};
+
+type ProductSummary = {
+  id: string;
+  name: string;
+  variants: ProductVariantSummary[];
+};
 
 const parseOptionalNumber = (value: string): number | undefined => {
   const trimmed = value.trim();
@@ -69,14 +90,18 @@ export default function SquarePadAdminPage() {
   const [token, setToken] = useState<string | null>(null);
   const [tokenError, setTokenError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('xml');
-  const [shareUrl, setShareUrl] = useState<string | null>(null);
-  const [shareCopyState, setShareCopyState] = useState<'idle' | 'success' | 'error'>('idle');
-  const shareCopyResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [xmlShareUrl, setXmlShareUrl] = useState<string | null>(null);
+  const [xmlCopyState, setXmlCopyState] = useState<'idle' | 'success' | 'error'>('idle');
+  const xmlCopyResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [imageShareUrl, setImageShareUrl] = useState<string | null>(null);
+  const [imageCopyState, setImageCopyState] = useState<'idle' | 'success' | 'error'>('idle');
+  const imageCopyResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [productShareUrl, setProductShareUrl] = useState<string | null>(null);
+  const [productCopyState, setProductCopyState] = useState<'idle' | 'success' | 'error'>('idle');
+  const productCopyResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentYear = new Date().getFullYear();
 
   const [productForm, setProductForm] = useState({
-    productId: '',
-    index: '1',
     size: '1024',
     bg: '#ffffff',
     align: 'center' as AlignOption,
@@ -86,6 +111,21 @@ export default function SquarePadAdminPage() {
   const [productLoading, setProductLoading] = useState(false);
   const [productError, setProductError] = useState<string | null>(null);
   const [productBgDraft, setProductBgDraft] = useState('#ffffff');
+  const [productSelectionOpen, setProductSelectionOpen] = useState(false);
+  const [productListLoading, setProductListLoading] = useState(false);
+  const [productListError, setProductListError] = useState<string | null>(null);
+  const [productListData, setProductListData] = useState<ProductSummary[]>([]);
+  const [productSearchQuery, setProductSearchQuery] = useState('');
+  const [productImagesCache, setProductImagesCache] = useState<Record<string, ProductImageOption[]>>({});
+  const [productImagesLoadingId, setProductImagesLoadingId] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductSummary | null>(null);
+  const [selectedProductImage, setSelectedProductImage] = useState<ProductImageOption | null>(null);
+  const productSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipNextSearchRef = useRef(false);
+  const selectedProductImages = useMemo(
+    () => (selectedProduct ? productImagesCache[selectedProduct.id] ?? [] : []),
+    [productImagesCache, selectedProduct],
+  );
 
   const [imageForm, setImageForm] = useState({
     img: '',
@@ -159,17 +199,57 @@ export default function SquarePadAdminPage() {
   }, [xmlForm.bg]);
 
   useEffect(() => {
-    if (shareCopyResetTimer.current) {
-      clearTimeout(shareCopyResetTimer.current);
-      shareCopyResetTimer.current = null;
+    if (xmlCopyResetTimer.current) {
+      clearTimeout(xmlCopyResetTimer.current);
+      xmlCopyResetTimer.current = null;
     }
-    setShareCopyState('idle');
-  }, [shareUrl]);
+    setXmlCopyState('idle');
+  }, [xmlShareUrl]);
+
+  useEffect(() => {
+    if (imageCopyResetTimer.current) {
+      clearTimeout(imageCopyResetTimer.current);
+      imageCopyResetTimer.current = null;
+    }
+    setImageCopyState('idle');
+  }, [imageShareUrl]);
+
+  useEffect(() => {
+    if (productCopyResetTimer.current) {
+      clearTimeout(productCopyResetTimer.current);
+      productCopyResetTimer.current = null;
+    }
+    setProductCopyState('idle');
+  }, [productShareUrl]);
+
+  useEffect(() => {
+    if (!selectedProduct) {
+      setSelectedProductImage(null);
+      return;
+    }
+
+    const images = selectedProductImages;
+    if (!images.length) {
+      setSelectedProductImage(null);
+      return;
+    }
+
+    const hasExisting = selectedProductImage && images.some((image) => image.imageId === selectedProductImage.imageId);
+    if (!hasExisting) {
+      setSelectedProductImage(images[0]);
+    }
+  }, [selectedProduct, selectedProductImage, selectedProductImages]);
 
   useEffect(() => {
     return () => {
-      if (shareCopyResetTimer.current) {
-        clearTimeout(shareCopyResetTimer.current);
+      if (xmlCopyResetTimer.current) {
+        clearTimeout(xmlCopyResetTimer.current);
+      }
+      if (imageCopyResetTimer.current) {
+        clearTimeout(imageCopyResetTimer.current);
+      }
+      if (productCopyResetTimer.current) {
+        clearTimeout(productCopyResetTimer.current);
       }
     };
   }, []);
@@ -189,8 +269,8 @@ export default function SquarePadAdminPage() {
         },
         {
           id: 'product' as TabId,
-          label: 'Ürün ID ile Görsel',
-          description: 'İkas kataloğundaki bir ürün görselini kare olarak hazırlayın.',
+          label: 'Ürün Seçerek Görsel',
+          description: 'Mevcut ürün kataloğunuzdan görsel seçip kare formata dönüştürün.',
         },
       ],
     [],
@@ -204,31 +284,26 @@ export default function SquarePadAdminPage() {
         return;
       }
 
-      if (!productForm.productId.trim()) {
-        setProductError('Lütfen ürün ID bilgisini girin.');
+      if (!selectedProduct || !selectedProductImage) {
+        setProductError('Lütfen katalogdan ürün ve görsel seçin.');
         return;
       }
 
       setProductLoading(true);
       setProductError(null);
+      setProductShareUrl(null);
 
       try {
         const params: {
-          productId: string;
-          index?: number;
+          img: string;
           size?: number;
           bg?: string;
           format?: string;
           align?: string;
         } = {
-          productId: productForm.productId.trim(),
+          img: selectedProductImage.url,
           align: productForm.align,
         };
-
-        const indexValue = parseOptionalNumber(productForm.index);
-        if (indexValue !== undefined) {
-          params.index = indexValue;
-        }
 
         const sizeValue = parseOptionalNumber(productForm.size);
         if (sizeValue !== undefined) {
@@ -244,7 +319,7 @@ export default function SquarePadAdminPage() {
           params.format = productForm.format;
         }
 
-        const response = await ApiRequests.square.fromProductId(token, params);
+        const response = await ApiRequests.square.fromImageUrl(token, params);
         if (response.status !== 200) {
           throw new Error('Görsel alınamadı.');
         }
@@ -257,14 +332,37 @@ export default function SquarePadAdminPage() {
           }
           return nextUrl;
         });
+
+        if (typeof window !== 'undefined') {
+          const shareTarget = new URL('/api/square/from-image-url', window.location.origin);
+          const shareParams = new URLSearchParams();
+          shareParams.set('img', selectedProductImage.url);
+          if (params.size) {
+            shareParams.set('size', params.size.toString());
+          }
+          if (params.bg) {
+            shareParams.set('bg', params.bg);
+          }
+          if (params.format) {
+            shareParams.set('format', params.format);
+          }
+          if (params.align) {
+            shareParams.set('align', params.align);
+          }
+          shareTarget.search = shareParams.toString();
+          setProductShareUrl(shareTarget.toString());
+        } else {
+          setProductShareUrl(selectedProductImage.url);
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : 'İşlem sırasında hata oluştu.';
         setProductError(message);
+        setProductShareUrl(null);
       } finally {
         setProductLoading(false);
       }
     },
-    [productForm, token],
+    [productForm.align, productForm.bg, productForm.format, productForm.size, selectedProduct, selectedProductImage, token],
   );
 
   const handleImageSubmit = useCallback(
@@ -282,6 +380,7 @@ export default function SquarePadAdminPage() {
 
       setImageLoading(true);
       setImageError(null);
+      setImageShareUrl(null);
 
       try {
         const params: {
@@ -322,15 +421,261 @@ export default function SquarePadAdminPage() {
           }
           return nextUrl;
         });
+
+        if (typeof window !== 'undefined') {
+          const shareTarget = new URL('/api/square/from-image-url', window.location.origin);
+          const shareParams = new URLSearchParams();
+          shareParams.set('img', params.img);
+          if (params.size) {
+            shareParams.set('size', params.size.toString());
+          }
+          if (params.bg) {
+            shareParams.set('bg', params.bg);
+          }
+          if (params.format) {
+            shareParams.set('format', params.format);
+          }
+          if (params.align) {
+            shareParams.set('align', params.align);
+          }
+          shareTarget.search = shareParams.toString();
+          setImageShareUrl(shareTarget.toString());
+        } else {
+          setImageShareUrl(params.img);
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : 'İşlem sırasında hata oluştu.';
         setImageError(message);
+        setImageShareUrl(null);
       } finally {
         setImageLoading(false);
       }
     },
     [imageForm, token],
   );
+
+  const fetchProductList = useCallback(
+    async (searchTerm: string) => {
+      if (!token) {
+        setProductError('Token alınamadı.');
+        return;
+      }
+
+      setProductListLoading(true);
+      setProductListError(null);
+
+      const trimmed = searchTerm.trim();
+      const params: {
+        page: number;
+        limit: number;
+        search?: string;
+        sku?: string;
+      } = {
+        page: 1,
+        limit: 50,
+      };
+
+      if (trimmed) {
+        const looksLikeSku = /^[a-z0-9-_]+$/i.test(trimmed);
+        if (looksLikeSku) {
+          params.sku = trimmed;
+        } else {
+          params.search = trimmed;
+        }
+      }
+
+      try {
+        const response = await ApiRequests.ikas.listProducts(token, params);
+        if (response.status !== 200 || !response.data?.data) {
+          throw new Error('Ürün listesi alınamadı.');
+        }
+
+        const items = response.data.data.items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          variants: item.variants ?? [],
+        }));
+
+        setProductListData(items);
+        setProductImagesCache((prev) => {
+          if (!items.length) {
+            return {};
+          }
+          const retained: Record<string, ProductImageOption[]> = {};
+          for (const item of items) {
+            if (prev[item.id]) {
+              retained[item.id] = prev[item.id];
+            }
+          }
+          return retained;
+        });
+
+        if (selectedProduct && !items.some((item) => item.id === selectedProduct.id)) {
+          setSelectedProduct(null);
+          setSelectedProductImage(null);
+          setProductShareUrl(null);
+          setProductPreviewUrl((prev) => {
+            if (prev) {
+              URL.revokeObjectURL(prev);
+            }
+            return null;
+          });
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Ürün listesi alınırken hata oluştu.';
+        setProductListError(message);
+        setProductListData([]);
+      } finally {
+        setProductListLoading(false);
+      }
+    },
+    [selectedProduct, token],
+  );
+
+  useEffect(() => {
+    if (!productSelectionOpen) {
+      if (productSearchTimerRef.current) {
+        clearTimeout(productSearchTimerRef.current);
+        productSearchTimerRef.current = null;
+      }
+      skipNextSearchRef.current = false;
+      setProductListError(null);
+      setProductListLoading(false);
+      setProductSearchQuery('');
+      return;
+    }
+
+    if (skipNextSearchRef.current) {
+      skipNextSearchRef.current = false;
+      return;
+    }
+
+    if (productSearchTimerRef.current) {
+      clearTimeout(productSearchTimerRef.current);
+    }
+
+    productSearchTimerRef.current = setTimeout(() => {
+      void fetchProductList(productSearchQuery.trim());
+    }, 400);
+
+    return () => {
+      if (productSearchTimerRef.current) {
+        clearTimeout(productSearchTimerRef.current);
+        productSearchTimerRef.current = null;
+      }
+    };
+  }, [fetchProductList, productSearchQuery, productSelectionOpen]);
+
+  const ensureProductImages = useCallback(
+    async (productId: string): Promise<ProductImageOption[]> => {
+      const cached = productImagesCache[productId];
+      if (cached && cached.length) {
+        return cached;
+      }
+
+      if (!token) {
+        setProductError('Token alınamadı.');
+        return [];
+      }
+
+      setProductImagesLoadingId(productId);
+      setProductListError(null);
+
+      try {
+        const response = await ApiRequests.ikas.getProductImages(token, productId);
+        if (response.status !== 200 || !response.data?.data?.product) {
+          throw new Error('Ürün görselleri alınamadı.');
+        }
+
+        const images = response.data.data.product.images ?? [];
+        setProductImagesCache((prev) => ({ ...prev, [productId]: images }));
+        return images;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Ürün görselleri alınırken hata oluştu.';
+        setProductListError(message);
+        return [];
+      } finally {
+        setProductImagesLoadingId(null);
+      }
+    },
+    [productImagesCache, token],
+  );
+
+  const handleOpenProductSelection = useCallback(() => {
+    if (!token) {
+      setProductError('Token alınamadı.');
+      return;
+    }
+
+    skipNextSearchRef.current = true;
+    setProductSelectionOpen(true);
+    setProductListError(null);
+    setProductListData([]);
+    setProductSearchQuery('');
+    void fetchProductList('');
+  }, [fetchProductList, token]);
+
+  const filteredProducts = useMemo(() => {
+    const query = productSearchQuery.trim().toLowerCase();
+    if (!query) {
+      return productListData;
+    }
+    return productListData.filter((product) => {
+      if (product.name.toLowerCase().includes(query) || product.id.toLowerCase().includes(query)) {
+        return true;
+      }
+      return product.variants.some((variant) => (variant.sku ?? '').toLowerCase().includes(query));
+    });
+  }, [productListData, productSearchQuery]);
+
+  const handleSelectProductImage = useCallback((image: ProductImageOption) => {
+    setSelectedProductImage(image);
+    setProductShareUrl(null);
+    setProductPreviewUrl((prev) => {
+      if (prev) {
+        URL.revokeObjectURL(prev);
+      }
+      return null;
+    });
+    setProductError(null);
+  }, []);
+
+  const handleSelectProduct = useCallback(
+    (product: ProductSummary) => {
+      setSelectedProduct(product);
+      setProductError(null);
+      setProductShareUrl(null);
+      setProductPreviewUrl((prev) => {
+        if (prev) {
+          URL.revokeObjectURL(prev);
+        }
+        return null;
+      });
+
+      const cached = productImagesCache[product.id];
+      if (cached && cached.length) {
+        handleSelectProductImage(cached[0]);
+        return;
+      }
+
+      void ensureProductImages(product.id).then((images) => {
+        if (images.length) {
+          handleSelectProductImage(images[0]);
+        } else {
+          setSelectedProductImage(null);
+        }
+      });
+    },
+    [ensureProductImages, handleSelectProductImage, productImagesCache],
+  );
+
+  const handleConfirmProductSelection = useCallback(() => {
+    if (!selectedProductImage) {
+      return;
+    }
+    setProductError(null);
+    setProductSelectionOpen(false);
+  }, [selectedProductImage]);
 
   const handleXmlSubmit = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
@@ -343,13 +688,13 @@ export default function SquarePadAdminPage() {
       const trimmedSourceInput = xmlForm.source.trim();
       if (!trimmedSourceInput) {
         setXmlError('Lütfen kaynak XML URL’sini girin.');
-        setShareUrl(null);
+        setXmlShareUrl(null);
         return;
       }
 
       setXmlLoading(true);
       setXmlError(null);
-      setShareUrl(null);
+      setXmlShareUrl(null);
 
       try {
         const params: {
@@ -410,12 +755,12 @@ export default function SquarePadAdminPage() {
           shareTarget.search = shareQuery;
         }
 
-        setShareUrl(shareTarget.toString());
+        setXmlShareUrl(shareTarget.toString());
       } catch (error) {
         const message = error instanceof Error ? error.message : 'XML dönüştürme sırasında hata oluştu.';
         setXmlError(message);
         setXmlPreview('');
-        setShareUrl(null);
+        setXmlShareUrl(null);
       } finally {
         setXmlLoading(false);
       }
@@ -423,54 +768,86 @@ export default function SquarePadAdminPage() {
     [token, xmlForm],
   );
 
-  const handleCopyShareUrl = useCallback(async () => {
-    if (!shareUrl) {
-      return;
-    }
-
-    const scheduleReset = () => {
-      if (shareCopyResetTimer.current) {
-        clearTimeout(shareCopyResetTimer.current);
+  const copyToClipboard = useCallback(
+    async (
+      value: string | null,
+      timerRef: MutableRefObject<ReturnType<typeof setTimeout> | null>,
+      setState: Dispatch<SetStateAction<'idle' | 'success' | 'error'>>,
+    ) => {
+      if (!value) {
+        return;
       }
-      shareCopyResetTimer.current = setTimeout(() => {
-        setShareCopyState('idle');
-        shareCopyResetTimer.current = null;
-      }, 2500);
-    };
 
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(shareUrl);
-      } else {
-        const textarea = document.createElement('textarea');
-        textarea.value = shareUrl;
-        textarea.style.position = 'fixed';
-        textarea.style.top = '-9999px';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        const successful = document.execCommand('copy');
-        document.body.removeChild(textarea);
-        if (!successful) {
-          throw new Error('copy_failed');
+      const scheduleReset = () => {
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
         }
-      }
-      setShareCopyState('success');
-      scheduleReset();
-    } catch {
-      setShareCopyState('error');
-      scheduleReset();
-    }
-  }, [shareUrl]);
+        timerRef.current = setTimeout(() => {
+          setState('idle');
+          timerRef.current = null;
+        }, 2500);
+      };
 
-  const copyButtonLabel = shareCopyState === 'success' ? 'Kopyalandı!' : shareCopyState === 'error' ? 'Tekrar Dene' : 'Kopyala';
-  const copyButtonVariant = shareCopyState === 'success' ? 'default' : shareCopyState === 'error' ? 'destructive' : 'outline';
-  const copyStatusMessage =
-    shareCopyState === 'success'
-      ? 'Bağlantı panoya kopyalandı.'
-      : shareCopyState === 'error'
-        ? 'Kopyalama başarısız oldu, lütfen tekrar deneyin.'
-        : '';
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(value);
+        } else {
+          const textarea = document.createElement('textarea');
+          textarea.value = value;
+          textarea.style.position = 'fixed';
+          textarea.style.top = '-9999px';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          const successful = document.execCommand('copy');
+          document.body.removeChild(textarea);
+          if (!successful) {
+            throw new Error('copy_failed');
+          }
+        }
+        setState('success');
+        scheduleReset();
+      } catch {
+        setState('error');
+        scheduleReset();
+      }
+    },
+    [],
+  );
+
+  const handleXmlCopyShareUrl = useCallback(async () => {
+    await copyToClipboard(xmlShareUrl, xmlCopyResetTimer, setXmlCopyState);
+  }, [copyToClipboard, xmlShareUrl]);
+
+  const handleImageCopyShareUrl = useCallback(async () => {
+    await copyToClipboard(imageShareUrl, imageCopyResetTimer, setImageCopyState);
+  }, [copyToClipboard, imageShareUrl]);
+
+  const handleProductCopyShareUrl = useCallback(async () => {
+    await copyToClipboard(productShareUrl, productCopyResetTimer, setProductCopyState);
+  }, [copyToClipboard, productShareUrl]);
+
+  type CopyFeedback = {
+    label: string;
+    variant: 'default' | 'destructive' | 'outline';
+    message: string;
+  };
+
+  const getCopyPresentation = useCallback((state: 'idle' | 'success' | 'error'): CopyFeedback => {
+    const label = state === 'success' ? 'Kopyalandı!' : state === 'error' ? 'Tekrar Dene' : 'Kopyala';
+    const variant: CopyFeedback['variant'] = state === 'success' ? 'default' : state === 'error' ? 'destructive' : 'outline';
+    const message =
+      state === 'success'
+        ? 'Bağlantı panoya kopyalandı.'
+        : state === 'error'
+          ? 'Kopyalama başarısız oldu, lütfen tekrar deneyin.'
+          : '';
+    return { label, variant, message };
+  }, []);
+
+  const xmlCopyPresentation = useMemo(() => getCopyPresentation(xmlCopyState), [getCopyPresentation, xmlCopyState]);
+  const imageCopyPresentation = useMemo(() => getCopyPresentation(imageCopyState), [getCopyPresentation, imageCopyState]);
+  const productCopyPresentation = useMemo(() => getCopyPresentation(productCopyState), [getCopyPresentation, productCopyState]);
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -524,39 +901,108 @@ export default function SquarePadAdminPage() {
         {activeTab === 'product' && (
           <Card>
             <CardHeader>
-              <CardTitle>Ürün Kimliği ile Kare Görsel</CardTitle>
-              <CardDescription>İkas’ta kayıtlı bir ürünün görselini kare boyutlarda yeniden oluşturun. Görsel sırası ve çıktı seçenekleri isteğe bağlıdır.</CardDescription>
+              <CardTitle>Katalogdan Seçilen Ürün ile Kare Görsel</CardTitle>
+              <CardDescription>İkas kataloğunuzdaki ürünleri listeleyip görsellerinden birini seçin, kare ölçülerde yeniden oluşturun.</CardDescription>
             </CardHeader>
             <CardContent>
               <form className="space-y-6" onSubmit={handleProductSubmit}>
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="md:col-span-2 space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="product-id-input">
-                      Ürün ID
-                    </label>
-                    <Input
-                      id="product-id-input"
-                      placeholder="örn. gid://ikas/Product/123"
-                      value={productForm.productId}
-                      onChange={(event) => setProductForm((prev) => ({ ...prev, productId: event.target.value }))}
-                      onInvalid={(event) => event.currentTarget.setCustomValidity('Lütfen ürün ID bilgisini girin.')}
-                      onInput={(event) => event.currentTarget.setCustomValidity('')}
-                      required
-                    />
+                  <div className="md:col-span-2 space-y-3">
+                    <div className="flex items-center gap-1 text-sm font-medium text-foreground">
+                      <span>Katalogdan Ürün ve Görsel Seçimi</span>
+                      <InfoTooltip message="Ürün seçme penceresini açarak katalogdaki ürünleri ve görsellerini inceleyin." />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Ürün adı, ID veya SKU bilgisiyle arama yapabilir, seçtiğiniz ürünün görsellerinden birini kare formata dönüştürebilirsiniz.</p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Button type="button" disabled={!token || productListLoading} onClick={handleOpenProductSelection}>
+                        {productListLoading ? 'Ürünler yükleniyor…' : 'Ürün Seç'}
+                      </Button>
+                      {productListError && <span className="text-sm text-destructive">{productListError}</span>}
+                      {selectedProduct && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedProduct(null);
+                            setSelectedProductImage(null);
+                            setProductShareUrl(null);
+                            setProductPreviewUrl((prev) => {
+                              if (prev) {
+                                URL.revokeObjectURL(prev);
+                              }
+                              return null;
+                            });
+                          }}
+                        >
+                          Seçimi Temizle
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="product-index-input">
-                      Görsel Sırası
-                      <InfoTooltip message="Ürünün görsel listesinden hangi sıranın kullanılacağını seçin. 1 ana görseli temsil eder." />
-                    </label>
-                    <Input
-                      id="product-index-input"
-                      type="number"
-                      min={0}
-                      value={productForm.index}
-                      onChange={(event) => setProductForm((prev) => ({ ...prev, index: event.target.value }))}
-                    />
-                  </div>
+
+                  {selectedProduct ? (
+                    <div className="md:col-span-2 space-y-4 rounded-lg border border-muted bg-muted/10 p-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="text-sm font-semibold text-foreground">{selectedProduct.name}</h3>
+                          <p className="text-xs text-muted-foreground">{selectedProduct.id}</p>
+                          {selectedProduct.variants.length ? (
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              {selectedProduct.variants.length} varyant ·{' '}
+                              {selectedProduct.variants
+                                .map((variant) => variant.sku)
+                                .filter((sku): sku is string => Boolean(sku))
+                                .slice(0, 3)
+                                .join(', ') || 'SKU bilgisi yok'}
+                            </p>
+                          ) : null}
+                        </div>
+                        {selectedProductImage ? (
+                          <span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">Görsel seçildi</span>
+                        ) : null}
+                      </div>
+
+                      {productImagesLoadingId === selectedProduct.id ? (
+                        <p className="text-xs text-muted-foreground">Ürün görselleri yükleniyor…</p>
+                      ) : selectedProductImages.length > 0 ? (
+                        <div className="flex flex-wrap gap-3">
+                          {selectedProductImages.map((image, index) => {
+                            const isActive = selectedProductImage?.url === image.url;
+                            return (
+                              <button
+                                type="button"
+                                key={`${selectedProduct.id}-${image.imageId}`}
+                                onClick={() => handleSelectProductImage(image)}
+                                className={`group relative flex w-32 flex-col items-center gap-2 rounded-md border p-2 transition ${
+                                  isActive ? 'border-primary bg-primary/10 shadow-sm' : 'border-muted bg-background hover:border-primary/50'
+                                }`}
+                              >
+                                <Image
+                                  alt={image.isMain ? 'Ana görsel' : `Görsel ${index + 1}`}
+                                  className="h-20 w-full rounded object-contain"
+                                  height={80}
+                                  width={120}
+                                  src={image.url}
+                                  unoptimized
+                                />
+                                <span className="text-[11px] text-muted-foreground">
+                                  {image.isMain ? 'Ana Görsel' : `Görsel ${index + 1}`}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Bu ürüne ait görsel bulunamadı.</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="md:col-span-2 rounded-lg border border-dashed border-muted bg-muted/10 p-4 text-xs text-muted-foreground">
+                      Ürün Seç butonuyla kataloğunuzu açın; seçim yaptığınızda ürün ve görsel bilgisi burada özetlenecek.
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="product-size-input">
                       Çıktı Boyutu (px)
@@ -646,30 +1092,56 @@ export default function SquarePadAdminPage() {
                 {productError && <p className="text-sm text-destructive">{productError}</p>}
 
                 <div className="flex items-center gap-3">
-                  <Button type="submit" disabled={productLoading || !token}>
+                  <Button type="submit" disabled={productLoading || !token || !selectedProductImage}>
                     {productLoading ? 'Oluşturuluyor…' : 'Kare Görseli Oluştur'}
                   </Button>
-                  {productPreviewUrl && (
-                    <a className="text-sm text-primary underline-offset-4 hover:underline" href={productPreviewUrl} download target="_blank" rel="noreferrer">
-                      Önizlemeyi indir
-                    </a>
-                  )}
                 </div>
 
                 {productPreviewUrl && (
-                  <div className="mt-6 flex flex-col gap-2">
-                    <span className="text-sm font-medium text-foreground">Önizleme</span>
-                    <div className="flex items-center justify-center rounded-lg border border-dashed border-muted bg-muted/30 p-6">
-                      <Image
-                        alt="Ürün kare görseli"
-                        className="h-64 w-64 rounded-md object-contain shadow-sm"
-                        height={256}
-                        width={256}
-                        src={productPreviewUrl}
-                        unoptimized
-                      />
+                  <>
+                    <div className="mt-6 flex flex-col gap-2">
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Oluşturulan Görsel</span>
+                      <div className="rounded-md border border-muted bg-muted/30 px-3 py-3 text-xs text-muted-foreground">
+                        <p className="break-all leading-relaxed">{productShareUrl ?? productPreviewUrl}</p>
+                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                          <Button
+                            type="button"
+                            className="shrink-0"
+                            variant={productCopyPresentation.variant}
+                            size="sm"
+                            onClick={handleProductCopyShareUrl}
+                            disabled={!productShareUrl}
+                          >
+                            {productCopyPresentation.label}
+                          </Button>
+                          <span aria-live="polite" className="text-[11px] text-muted-foreground">
+                            {productCopyPresentation.message}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+
+                    <div className="mt-6 flex flex-col gap-3">
+                      <span className="text-sm font-medium text-foreground">Önizleme</span>
+                      <div className="flex items-start gap-4 rounded-lg border border-dashed border-muted bg-muted/30 p-6">
+                        <Image
+                          alt="Ürün kare görseli"
+                          className="h-64 w-64 rounded-md object-contain shadow-sm"
+                          height={256}
+                          width={256}
+                          src={productPreviewUrl}
+                          unoptimized
+                        />
+                        <div className="flex flex-col gap-3">
+                          <Button asChild size="sm" variant="outline" className="w-32">
+                            <a download href={productPreviewUrl} rel="noreferrer" target="_blank">
+                              Görseli İndir
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 )}
               </form>
             </CardContent>
@@ -798,28 +1270,20 @@ export default function SquarePadAdminPage() {
                     <div className="mt-6 flex flex-col gap-2">
                       <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Oluşturulan Görsel</span>
                       <div className="rounded-md border border-muted bg-muted/30 px-3 py-3 text-xs text-muted-foreground">
-                        <p className="break-all leading-relaxed">{imagePreviewUrl}</p>
+                        <p className="break-all leading-relaxed">{imageShareUrl ?? imagePreviewUrl}</p>
                         <div className="mt-3 flex flex-wrap items-center gap-3">
                           <Button
                             type="button"
                             className="shrink-0"
-                            variant={copyButtonVariant}
+                            variant={imageCopyPresentation.variant}
                             size="sm"
-                            onClick={async () => {
-                              try {
-                                if (navigator.clipboard?.writeText) {
-                                  await navigator.clipboard.writeText(imagePreviewUrl);
-                                  setShareCopyState('success');
-                                }
-                              } catch {
-                                setShareCopyState('error');
-                              }
-                            }}
+                            onClick={handleImageCopyShareUrl}
+                            disabled={!imageShareUrl}
                           >
-                            {copyButtonLabel}
+                            {imageCopyPresentation.label}
                           </Button>
                           <span aria-live="polite" className="text-[11px] text-muted-foreground">
-                            {copyStatusMessage}
+                            {imageCopyPresentation.message}
                           </span>
                         </div>
                       </div>
@@ -970,17 +1434,17 @@ export default function SquarePadAdminPage() {
                   </Button>
                 </div>
 
-                {shareUrl && (
+                {xmlShareUrl && (
                   <div className="mt-6 flex flex-col gap-2">
                     <span className="text-sm font-medium text-foreground">Paylaşılabilir Bağlantı</span>
                     <div className="rounded-md border border-muted bg-muted/30 px-3 py-3 text-xs text-muted-foreground">
-                      <p className="break-all leading-relaxed">{shareUrl}</p>
+                      <p className="break-all leading-relaxed">{xmlShareUrl}</p>
                       <div className="mt-3 flex flex-wrap items-center gap-3">
-                        <Button type="button" className="shrink-0" variant={copyButtonVariant} size="sm" onClick={handleCopyShareUrl}>
-                          {copyButtonLabel}
+                        <Button type="button" className="shrink-0" variant={xmlCopyPresentation.variant} size="sm" onClick={handleXmlCopyShareUrl}>
+                          {xmlCopyPresentation.label}
                         </Button>
                         <span aria-live="polite" className="text-[11px] text-muted-foreground">
-                          {copyStatusMessage}
+                          {xmlCopyPresentation.message}
                         </span>
                       </div>
                     </div>
@@ -1059,6 +1523,121 @@ export default function SquarePadAdminPage() {
           </div>
         </div>
       </footer>
+
+      <Dialog
+        open={productSelectionOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setProductSelectionOpen(false);
+          }
+        }}
+      >
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Ürün ve Görsel Seç</DialogTitle>
+            <DialogDescription>Kataloğunuzdan bir ürün seçin, görsellerini inceleyin ve kare format için kullanılacak olanı belirleyin.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <Input
+              placeholder="Ürün adı, ID veya SKU ile ara"
+              value={productSearchQuery}
+              onChange={(event) => setProductSearchQuery(event.target.value)}
+              disabled={productListLoading}
+            />
+
+            <div className="max-h-[420px] space-y-3 overflow-auto pr-1">
+              {productListLoading ? (
+                <p className="text-sm text-muted-foreground">Ürünler yükleniyor…</p>
+              ) : productListError ? (
+                <p className="text-sm text-destructive">{productListError}</p>
+              ) : filteredProducts.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Aramanıza uygun ürün bulunamadı.</p>
+              ) : (
+                filteredProducts.map((product) => {
+                  const isSelected = selectedProduct?.id === product.id;
+                  const productImages = productImagesCache[product.id] ?? [];
+                  const isImagesLoading = productImagesLoadingId === product.id;
+                  const imageCountLabel = isImagesLoading
+                    ? 'Görseller yükleniyor…'
+                    : productImages.length
+                      ? `${productImages.length} görsel`
+                      : 'Görseller seçildiğinde yüklenir';
+
+                  return (
+                    <div
+                      key={product.id}
+                      className={`rounded-lg border transition ${isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'border-muted bg-background hover:border-primary/40'}`}
+                    >
+                      <button
+                        type="button"
+                        className="flex w-full items-center justify-between gap-3 p-3 text-left"
+                        onClick={() => handleSelectProduct(product)}
+                      >
+                        <div>
+                          <h3 className="text-sm font-medium text-foreground">{product.name}</h3>
+                          <p className="text-xs text-muted-foreground">{product.id}</p>
+                        </div>
+                        <span className="text-xs text-muted-foreground">{imageCountLabel}</span>
+                      </button>
+
+                      {isSelected ? (
+                        <div className="border-t border-muted/60 px-3 pb-3">
+                          {isImagesLoading ? (
+                            <p className="mt-3 text-[11px] text-muted-foreground">Görseller yükleniyor…</p>
+                          ) : productImages.length > 0 ? (
+                            <>
+                              <p className="mt-3 text-[11px] text-muted-foreground">Kullanmak istediğiniz görseli seçin:</p>
+                              <div className="mt-2 flex flex-wrap gap-3">
+                                {productImages.map((image, index) => {
+                                  const isActive = selectedProductImage?.imageId === image.imageId;
+                                  return (
+                                    <button
+                                      type="button"
+                                      key={`${product.id}-${image.imageId}`}
+                                      onClick={() => handleSelectProductImage(image)}
+                                      className={`group relative flex w-28 flex-col items-center gap-2 rounded-md border p-2 transition ${
+                                        isActive ? 'border-primary bg-primary/10 shadow-sm' : 'border-muted bg-background hover:border-primary/50'
+                                      }`}
+                                    >
+                                      <Image
+                                        alt={image.isMain ? 'Ana görsel' : `Görsel ${index + 1}`}
+                                        className="h-16 w-full rounded object-contain"
+                                        height={64}
+                                        width={96}
+                                        src={image.url}
+                                        unoptimized
+                                      />
+                                      <span className="text-[10px] text-muted-foreground">
+                                        {image.isMain ? 'Ana Görsel' : `Görsel ${index + 1}`}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </>
+                          ) : (
+                            <p className="mt-3 text-[11px] text-muted-foreground">Bu ürüne ait görsel bulunamadı.</p>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setProductSelectionOpen(false)}>
+              İptal
+            </Button>
+            <Button type="button" onClick={handleConfirmProductSelection} disabled={!selectedProductImage}>
+              Seçimi Onayla
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
