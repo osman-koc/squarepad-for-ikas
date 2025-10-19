@@ -789,29 +789,63 @@ export default function SquarePadAdminPage() {
 
                 <div className="flex items-center gap-3">
                   <Button type="submit" disabled={imageLoading || !token}>
-                  {imageLoading ? 'Oluşturuluyor…' : 'Kare Görseli Oluştur'}
+                    {imageLoading ? 'Oluşturuluyor…' : 'Kare Görseli Oluştur'}
                   </Button>
-                  {imagePreviewUrl && (
-                    <a className="text-sm text-primary underline-offset-4 hover:underline" href={imagePreviewUrl} download target="_blank" rel="noreferrer">
-                      Önizlemeyi indir
-                    </a>
-                  )}
                 </div>
 
                 {imagePreviewUrl && (
-                  <div className="mt-6 flex flex-col gap-2">
-                    <span className="text-sm font-medium text-foreground">Önizleme</span>
-                    <div className="flex items-center justify-center rounded-lg border border-dashed border-muted bg-muted/30 p-6">
-                      <Image
-                        alt="Kare görsel önizleme"
-                        className="h-64 w-64 rounded-md object-contain shadow-sm"
-                        height={256}
-                        width={256}
-                        src={imagePreviewUrl}
-                        unoptimized
-                      />
+                  <>
+                    <div className="mt-6 flex flex-col gap-2">
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Oluşturulan Görsel</span>
+                      <div className="rounded-md border border-muted bg-muted/30 px-3 py-3 text-xs text-muted-foreground">
+                        <p className="break-all leading-relaxed">{imagePreviewUrl}</p>
+                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                          <Button
+                            type="button"
+                            className="shrink-0"
+                            variant={copyButtonVariant}
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                if (navigator.clipboard?.writeText) {
+                                  await navigator.clipboard.writeText(imagePreviewUrl);
+                                  setShareCopyState('success');
+                                }
+                              } catch {
+                                setShareCopyState('error');
+                              }
+                            }}
+                          >
+                            {copyButtonLabel}
+                          </Button>
+                          <span aria-live="polite" className="text-[11px] text-muted-foreground">
+                            {copyStatusMessage}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+
+                    <div className="mt-6 flex flex-col gap-3">
+                      <span className="text-sm font-medium text-foreground">Önizleme</span>
+                      <div className="flex items-start gap-4 rounded-lg border border-dashed border-muted bg-muted/30 p-6">
+                        <Image
+                          alt="Kare görsel önizleme"
+                          className="h-64 w-64 rounded-md object-contain shadow-sm"
+                          height={256}
+                          width={256}
+                          src={imagePreviewUrl}
+                          unoptimized
+                        />
+                        <div className="flex flex-col gap-3">
+                          <Button asChild size="sm" variant="outline" className="w-32">
+                            <a download href={imagePreviewUrl} rel="noreferrer" target="_blank">
+                              Görseli İndir
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 )}
               </form>
             </CardContent>
