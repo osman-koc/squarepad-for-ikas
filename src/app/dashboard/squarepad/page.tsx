@@ -1,6 +1,7 @@
 'use client';
 
 import { AppBridgeHelper } from '@ikas/app-helpers';
+import { Info } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TokenHelpers } from '@/helpers/token-helpers';
@@ -34,6 +35,33 @@ const normaliseBgInput = (value: string): string | undefined => {
   }
 
   return trimmed.startsWith('#') ? trimmed.slice(1) : trimmed;
+};
+
+const InfoTooltip = ({ message }: { message: string }) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={(event) => event.preventDefault()}
+        aria-label={message}
+      >
+        <Info aria-hidden="true" className="h-3.5 w-3.5" focusable="false" />
+      </button>
+      {open ? (
+        <span className="pointer-events-none absolute left-full top-0 z-20 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border border-border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md">
+          {message}
+        </span>
+      ) : null}
+    </span>
+  );
 };
 
 export default function SquarePadAdminPage() {
@@ -151,17 +179,17 @@ export default function SquarePadAdminPage() {
         {
           id: 'xml' as TabId,
           label: 'XML Feed',
-          description: 'XML feed içindeki ek görsel linklerini kare URL’lerle günceller.',
+          description: 'Ürün feed’inizdeki ek görselleri kare versiyonlarıyla değiştirin.',
         },
         {
           id: 'image' as TabId,
           label: 'URL ile Görsel',
-          description: 'İstediğiniz görsel URL’sini kare formatına dönüştürür.',
+          description: 'Herhangi bir görsel bağlantısını kare formatına uyarlayın.',
         },
         {
           id: 'product' as TabId,
           label: 'Ürün ID ile Görsel',
-          description: 'Bir ürünün görsellerinden kare versiyon üretir.',
+          description: 'İkas kataloğundaki bir ürün görselini kare olarak hazırlayın.',
         },
       ],
     [],
@@ -447,23 +475,21 @@ export default function SquarePadAdminPage() {
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pb-12 pt-10">
         <header className="space-y-3">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Image alt="SquarePad Logo" className="h-12 w-12 rounded-xl border border-muted bg-card p-1 shadow-sm" height={48} width={48} src="/square-logo.svg" />
             <div>
               <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">SquarePad</span>
-              <h1 className="text-2xl font-semibold text-foreground">Square Görsel Araçları</h1>
+              <h1 className="text-2xl font-semibold text-foreground">Görsellerinizi Kare Formata Taşıyın</h1>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Bu panelden Square eklentinizin sağladığı kare görsel servislerini test edebilir ve müşterilerinizle paylaşacağınız URL&apos;leri doğrulayabilirsiniz.
-          </p>
+          <p className="text-sm text-muted-foreground">Aşağıdaki araçlarla ürün görsellerinizi kare formatta yeniden boyutlandırabilir, hızlıca kontrol edip paylaşılabilir bağlantılar oluşturabilirsiniz.</p>
           {tokenError && <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{tokenError}</p>}
         </header>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Servisler</CardTitle>
-            <CardDescription>Üç farklı kare görsel akışını tek ekrandan yönetin.</CardDescription>
+            <CardHeader>
+              <CardTitle>Görsel Dönüştürme Seçenekleri</CardTitle>
+              <CardDescription>İhtiyacınıza en uygun yöntemi seçerek kare görseller üretin.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex flex-wrap gap-2">
@@ -485,8 +511,8 @@ export default function SquarePadAdminPage() {
         {activeTab === 'product' && (
           <Card>
             <CardHeader>
-              <CardTitle>Ürün ID&apos;den Kare Görsel</CardTitle>
-              <CardDescription>İlk varyantın görselini kare formatında üretir. Varsayılan feed ayarları için değer girmeniz gerekmez.</CardDescription>
+              <CardTitle>Ürün Kimliği ile Kare Görsel</CardTitle>
+              <CardDescription>İkas’ta kayıtlı bir ürünün görselini kare boyutlarda yeniden oluşturun. Görsel sırası ve çıktı seçenekleri isteğe bağlıdır.</CardDescription>
             </CardHeader>
             <CardContent>
               <form className="space-y-6" onSubmit={handleProductSubmit}>
@@ -506,8 +532,9 @@ export default function SquarePadAdminPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="product-index-input">
+                    <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="product-index-input">
                       Görsel Sırası
+                      <InfoTooltip message="Ürünün görsel listesinden hangi sıranın kullanılacağını seçin. 1 ana görseli temsil eder." />
                     </label>
                     <Input
                       id="product-index-input"
@@ -518,8 +545,9 @@ export default function SquarePadAdminPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="product-size-input">
+                    <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="product-size-input">
                       Çıktı Boyutu (px)
+                      <InfoTooltip message="Kare görselin genişlik ve yüksekliğini piksel cinsinden belirler." />
                     </label>
                     <Input
                       id="product-size-input"
@@ -531,8 +559,9 @@ export default function SquarePadAdminPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="product-align-select">
+                    <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="product-align-select">
                       Yerleşim
+                      <InfoTooltip message="Görsel kare alan içinde hangi yönde hizalansın?" />
                     </label>
                     <select
                       id="product-align-select"
@@ -548,8 +577,9 @@ export default function SquarePadAdminPage() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="product-format-select">
+                    <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="product-format-select">
                       Format
+                      <InfoTooltip message="Çıktı dosya türünü seçin. Auto seçeneği tarayıcı yeteneklerine göre en uygun formatı döndürür." />
                     </label>
                     <select
                       id="product-format-select"
@@ -565,8 +595,9 @@ export default function SquarePadAdminPage() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="product-bg-input">
+                    <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="product-bg-input">
                       Arka Plan
+                      <InfoTooltip message="Kare içinde boş kalan alanların rengini belirleyin." />
                     </label>
                     <div className="flex items-center gap-3">
                       <Input
@@ -603,7 +634,7 @@ export default function SquarePadAdminPage() {
 
                 <div className="flex items-center gap-3">
                   <Button type="submit" disabled={productLoading || !token}>
-                    {productLoading ? 'Oluşturuluyor…' : 'Kare Görseli Getir'}
+                    {productLoading ? 'Oluşturuluyor…' : 'Kare Görseli Oluştur'}
                   </Button>
                   {productPreviewUrl && (
                     <a className="text-sm text-primary underline-offset-4 hover:underline" href={productPreviewUrl} download target="_blank" rel="noreferrer">
@@ -635,8 +666,8 @@ export default function SquarePadAdminPage() {
         {activeTab === 'image' && (
           <Card>
             <CardHeader>
-              <CardTitle>URL&apos;den Kare Görsel</CardTitle>
-              <CardDescription>Mevcut bir görsel URL’sini kare formatına dönüştürür.</CardDescription>
+              <CardTitle>URL ile Kare Görsel</CardTitle>
+              <CardDescription>Elinizdeki herhangi bir görsel bağlantısını kare ölçülere göre yeniden boyutlandırın.</CardDescription>
             </CardHeader>
             <CardContent>
               <form className="space-y-6" onSubmit={handleImageSubmit}>
@@ -656,8 +687,9 @@ export default function SquarePadAdminPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="image-size-input">
+                    <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="image-size-input">
                       Çıktı Boyutu (px)
+                      <InfoTooltip message="Kare görselin genişlik ve yüksekliğini piksel cinsinden belirler." />
                     </label>
                     <Input
                       id="image-size-input"
@@ -669,8 +701,9 @@ export default function SquarePadAdminPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="image-align-select">
+                    <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="image-align-select">
                       Yerleşim
+                      <InfoTooltip message="Görsel kare alan içinde nasıl hizalansın?" />
                     </label>
                     <select
                       id="image-align-select"
@@ -686,8 +719,9 @@ export default function SquarePadAdminPage() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="image-format-select">
+                    <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="image-format-select">
                       Format
+                      <InfoTooltip message="Çıktı dosya türünü seçin. Auto seçeneği tarayıcıya göre uygun formatı üretir." />
                     </label>
                     <select
                       id="image-format-select"
@@ -703,8 +737,9 @@ export default function SquarePadAdminPage() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="image-bg-input">
+                    <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="image-bg-input">
                       Arka Plan
+                      <InfoTooltip message="Kare içinde kalan boşlukların rengini ayarlayın." />
                     </label>
                     <div className="flex items-center gap-3">
                       <Input
@@ -741,7 +776,7 @@ export default function SquarePadAdminPage() {
 
                 <div className="flex items-center gap-3">
                   <Button type="submit" disabled={imageLoading || !token}>
-                    {imageLoading ? 'Oluşturuluyor…' : 'Kare Görseli Dönüştür'}
+                  {imageLoading ? 'Oluşturuluyor…' : 'Kare Görseli Oluştur'}
                   </Button>
                   {imagePreviewUrl && (
                     <a className="text-sm text-primary underline-offset-4 hover:underline" href={imagePreviewUrl} download target="_blank" rel="noreferrer">
@@ -774,14 +809,15 @@ export default function SquarePadAdminPage() {
           <Card>
             <CardHeader>
               <CardTitle>XML Feed Dönüştürücü</CardTitle>
-              <CardDescription>&lt;g:additional_image_link&gt; girdilerini Square servisinden dönen kare görsellerle değiştirir. Kaynak XML URL’si zorunludur.</CardDescription>
+              <CardDescription>Mevcut ürün feed’inizdeki ek görsel bağlantılarını kare olarak güncelleyin. Kaynak XML URL’si zorunludur.</CardDescription>
             </CardHeader>
             <CardContent>
               <form className="space-y-6" onSubmit={handleXmlSubmit}>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="md:col-span-2 space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="xml-source-input">
+                    <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="xml-source-input">
                       Kaynak XML URL&apos;si
+                      <InfoTooltip message="Kare görsellerle güncellenecek ürün feed’inin adresini girin." />
                     </label>
                     <Input
                       id="xml-source-input"
@@ -794,8 +830,9 @@ export default function SquarePadAdminPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="xml-size-input">
+                    <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="xml-size-input">
                       Çıktı Boyutu (px)
+                      <InfoTooltip message="Kare görsellerin piksel boyutlarını ayarlayın." />
                     </label>
                     <Input
                       id="xml-size-input"
@@ -807,8 +844,9 @@ export default function SquarePadAdminPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="xml-align-select">
+                    <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="xml-align-select">
                       Yerleşim
+                      <InfoTooltip message="Görsel kare alan içinde nasıl hizalansın?" />
                     </label>
                     <select
                       id="xml-align-select"
@@ -824,8 +862,9 @@ export default function SquarePadAdminPage() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="xml-format-select">
+                    <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="xml-format-select">
                       Format
+                      <InfoTooltip message="Çıktı dosya türünü belirleyin. Auto seçeneği tarayıcı uyumuna göre karar verir." />
                     </label>
                     <select
                       id="xml-format-select"
@@ -841,8 +880,9 @@ export default function SquarePadAdminPage() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="xml-bg-input">
+                    <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="xml-bg-input">
                       Arka Plan
+                      <InfoTooltip message="Kare içindeki boş alanların rengini seçin." />
                     </label>
                     <div className="flex items-center gap-3">
                       <Input
@@ -879,13 +919,13 @@ export default function SquarePadAdminPage() {
 
                 <div className="flex flex-wrap items-center gap-3">
                   <Button type="submit" disabled={xmlLoading || !token}>
-                    {xmlLoading ? 'Dönüştürülüyor…' : 'XML Feed Oluştur'}
+                    {xmlLoading ? 'Dönüştürülüyor…' : 'XML Feed’i Güncelle'}
                   </Button>
                 </div>
 
                 {shareUrl && (
                   <div className="mt-6 flex flex-col gap-2">
-                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Paylaşılabilir Link</span>
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Paylaşılabilir Bağlantı</span>
                     <div className="rounded-md border border-muted bg-muted/30 px-3 py-3 text-xs text-muted-foreground">
                       <p className="break-all leading-relaxed">{shareUrl}</p>
                       <div className="mt-3 flex flex-wrap items-center gap-3">
