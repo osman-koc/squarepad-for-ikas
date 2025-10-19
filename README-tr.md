@@ -2,6 +2,8 @@
 
 SquarePad, ikas tüccarlarına yönelik olarak Next.js 15 App Router deneyimi sunar; OAuth, Prisma, GraphQL (codegen), Tailwind + shadcn/ui ve güvenli sunucu rotalarını bir araya getirerek ikas kontrol paneli içinde ürün kataloğu destekli kare görsel araçları sağlar.
 
+![SquarePad dashboard ekran görüntüsü](public/screenshot.png)
+
 ## 🚀 Özellikler
 
 - **Next.js 15 + App Router** (React 19 + TypeScript)

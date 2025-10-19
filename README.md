@@ -2,6 +2,8 @@
 
 SquarePad is a Next.js 15 App Router experience for ikas merchants that bundles OAuth, Prisma, GraphQL (codegen), Tailwind + shadcn/ui, and secure server routes to deliver product-catalog powered square image tooling inside the ikas dashboard.
 
+![SquarePad dashboard screenshot](public/screenshot.png)
+
 ## 🚀 Features
 
 - **Next.js 15 + App Router** with React 19 and TypeScript
