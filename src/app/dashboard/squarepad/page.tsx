@@ -109,12 +109,20 @@ export default function SquarePadAdminPage() {
   useEffect(() => {
     TokenHelpers.getTokenForIframeApp()
       .then((resolvedToken) => {
-        if (!resolvedToken) {
-          setTokenError('Token alınamadı. Lütfen ikas üzerinden eriştiğinizden emin olun.');
+        if (resolvedToken) {
+          setToken(resolvedToken);
+          setTokenError(null);
           return;
         }
-        setToken(resolvedToken);
-        setTokenError(null);
+
+        // If no token, try to authorize
+        const urlParams = new URLSearchParams(window.location.search);
+        const storeName = urlParams.get('storeName');
+        if (storeName) {
+          window.location.replace(`/api/oauth/authorize/ikas?storeName=${storeName}`);
+        } else {
+          setTokenError('Token alınamadı ve mağaza adı bulunamadı. Lütfen ikas üzerinden eriştiğinizden emin olun.');
+        }
       })
       .catch((error) => {
         setTokenError(error instanceof Error ? error.message : 'Token alınırken bir hata oluştu.');
