@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
     callbackUrl.set('authorizedAppId', authorizedAppId);
 
     // Redirect the user to the callback URL
-    return NextResponse.redirect(new URL(`/callback?${callbackUrl.toString()}`, getRedirectUri(request.headers.get('host')!)));
+    return NextResponse.redirect(new URL(`/callback?${callbackUrl.toString()}`, request.nextUrl.origin));
   } catch (error) {
     // Log and return error response
     console.error('Callback error:', error);
