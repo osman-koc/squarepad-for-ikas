@@ -63,6 +63,12 @@ COPY --from=builder /app/prisma ./prisma
 # a proper DATABASE_URL environment variable (e.g. Postgres) and run the
 # appropriate Prisma migrations during deployment.
 
+# Copy entrypoint that runs prisma migrations when DATABASE_URL is set
+# and ensure it is executable. Run these steps as root (default) before
+# switching to the non-root runtime user.
+COPY --from=builder /app/scripts/docker-entrypoint.sh /app/scripts/docker-entrypoint.sh
+RUN chmod +x /app/scripts/docker-entrypoint.sh
+
 USER nextjs
 
 # Set environment variables for runtime
@@ -70,7 +76,4 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
 # Copy entrypoint that runs prisma migrations when DATABASE_URL is set
-COPY --from=builder /app/scripts/docker-entrypoint.sh /app/scripts/docker-entrypoint.sh
-RUN chmod +x /app/scripts/docker-entrypoint.sh
-
 ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
