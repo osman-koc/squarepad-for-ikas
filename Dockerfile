@@ -28,6 +28,9 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+# Ensure openssl is available for Prisma (Prisma warns if it can't detect libssl).
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-certificates \
+	&& rm -rf /var/lib/apt/lists/*
 
 # Generate Prisma Client
 RUN pnpm prisma generate
@@ -45,6 +48,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
+# Ensure runtime has openssl installed for Prisma when required
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-certificates \
+	&& rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/public ./public
 
