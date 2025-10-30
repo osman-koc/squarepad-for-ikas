@@ -77,7 +77,16 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Failed to list products', error);
+    // Log richer context to help diagnose production-only failures
+    console.error('Failed to list products', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      user,
+      authorizedAppId: user?.authorizedAppId,
+      authTokenPresent: !!authToken,
+      graphApiUrl: process.env.NEXT_PUBLIC_GRAPH_API_URL,
+    });
+
     return NextResponse.json({ error: 'Failed to list products' }, { status: 500 });
   }
 }
