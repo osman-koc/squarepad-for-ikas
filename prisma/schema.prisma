@@ -6,8 +6,10 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  // Use DATABASE_URL environment variable for production (Postgres recommended)
+  // Example: postgresql://user:password@host:5432/dbname?schema=public
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model AuthToken {

@@ -28,6 +28,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+
 # Generate Prisma Client
 RUN pnpm prisma generate
 
@@ -58,11 +59,18 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Copy Prisma schema and migrations
 COPY --from=builder /app/prisma ./prisma
 
+# NOTE: This image does not include a local SQLite DB. Production should set
+# a proper DATABASE_URL environment variable (e.g. Postgres) and run the
+# appropriate Prisma migrations during deployment.
+
 USER nextjs
 
 # Set environment variables for runtime
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Update next.config.js to output standalone
-CMD ["node", "server.js"]
+# Copy entrypoint that runs prisma migrations when DATABASE_URL is set
+COPY --from=builder /app/scripts/docker-entrypoint.sh /app/scripts/docker-entrypoint.sh
+RUN chmod +x /app/scripts/docker-entrypoint.sh
+
+ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
