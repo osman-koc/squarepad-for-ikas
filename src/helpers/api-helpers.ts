@@ -81,15 +81,16 @@ export async function onCheckToken(token?: AuthToken): Promise<{ accessToken: st
  * @returns The correct redirect URI for OAuth callback
  */
 export const getRedirectUri = (host: string) => {
+
   // If config uses localhost but request is from different host (e.g., trycloudflare.com)
-  if (config.oauth.redirectUri.includes('localhost') && !host.includes('localhost')) {
-    // Replace localhost with actual host for production deployments
-    const redirectUri = new URL(config.oauth.redirectUri);
-    redirectUri.host = host;
-    redirectUri.protocol = 'https';
-    redirectUri.port = '443';
-    return redirectUri.toString();
-  }
+  // if (config.oauth.redirectUri.includes('localhost') && !host.includes('localhost')) {
+  //   // Replace localhost with actual host for production deployments
+  //   const redirectUri = new URL(config.oauth.redirectUri);
+  //   redirectUri.host = host;
+  //   redirectUri.protocol = 'https';
+  //   redirectUri.port = '443';
+  //   return redirectUri.toString();
+  // }
 
   // Use configured redirect URI as-is
   return config.oauth.redirectUri;
