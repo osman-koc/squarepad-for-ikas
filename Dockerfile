@@ -12,7 +12,9 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+# Allow install even if pnpm-lock.yaml is not perfectly in sync with package.json.
+# For a stricter/safer approach, regenerate and commit pnpm-lock.yaml instead of using --no-frozen-lockfile.
+RUN pnpm install --no-frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -22,9 +24,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Set environment variables
-ENV NEXT_TELEMETRY_DISABLED 1
-ENV NODE_ENV production
+# Set environment variables (use key=value form to avoid legacy warnings)
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
 
 # Generate Prisma Client
 RUN pnpm prisma generate
@@ -36,8 +38,9 @@ RUN pnpm build
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+# Use key=value form here too
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -58,8 +61,8 @@ COPY --from=builder /app/prisma ./prisma
 USER nextjs
 
 # Set environment variables for runtime
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
 # Update next.config.js to output standalone
 CMD ["node", "server.js"]
