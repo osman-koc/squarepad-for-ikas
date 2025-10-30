@@ -65,6 +65,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Copy Prisma schema and migrations
 COPY --from=builder /app/prisma ./prisma
 
+# Copy full node_modules from builder so runtime has local binaries (e.g. prisma CLI)
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+
 # NOTE: This image does not include a local SQLite DB. Production should set
 # a proper DATABASE_URL environment variable (e.g. Postgres) and run the
 # appropriate Prisma migrations during deployment.
