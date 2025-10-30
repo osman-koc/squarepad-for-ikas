@@ -40,7 +40,17 @@ export class TokenHelpers {
     if (window.self !== window.top) {
       try {
         // Get the authorized app ID to create a unique storage key
-        const authorizedAppId = (await AppBridgeHelper.getAuthorizedAppId()) || null;
+        let authorizedAppId = (await AppBridgeHelper.getAuthorizedAppId()) || null;
+
+        // If App Bridge fails, try to get it from sessionStorage as a fallback
+        if (!authorizedAppId) {
+          authorizedAppId = sessionStorage.getItem('authorizedAppId') || null;
+        }
+
+        if (!authorizedAppId) {
+          // If we still don't have an ID, we cannot proceed.
+          return null;
+        }
         
         // Attempt to retrieve cached token from session storage
         let token = sessionStorage.getItem(`${TOKEN_KEY}-${authorizedAppId}`);
