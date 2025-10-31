@@ -28,6 +28,7 @@ type XmlTabProps = {
   error: string | null;
   shareUrl: string | null;
   preview: string;
+  productCount: number;
   onCopyShareUrl: () => void;
   copyPresentation: CopyFeedback;
 };
@@ -43,6 +44,7 @@ export function XmlTab({
   error,
   shareUrl,
   preview,
+  productCount,
   onCopyShareUrl,
   copyPresentation,
 }: XmlTabProps) {
@@ -182,6 +184,9 @@ export function XmlTab({
                     </Button>
                   </div>
                   <p className="break-all rounded-md border border-muted/80 bg-background/90 px-3 py-2 text-xs text-muted-foreground">{shareUrl}</p>
+                  {productCount > 0 ? (
+                    <p className="text-sm text-muted-foreground">{productCount} ürün bulundu ve işlendi.</p>
+                  ) : null}
                   {copyPresentation.message ? (
                     <span aria-live="polite" className="text-[11px] text-muted-foreground">
                       {copyPresentation.message}

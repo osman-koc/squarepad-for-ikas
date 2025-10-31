@@ -101,6 +101,7 @@ export default function SquarePadAdminPage() {
   const [xmlPreview, setXmlPreview] = useState<string>('');
   const [xmlLoading, setXmlLoading] = useState(false);
   const [xmlError, setXmlError] = useState<string | null>(null);
+  const [xmlProductCount, setXmlProductCount] = useState(0);
 
   useEffect(() => {
     AppBridgeHelper.closeLoader();
@@ -656,12 +657,14 @@ export default function SquarePadAdminPage() {
       if (!trimmedSourceInput) {
         setXmlError('Lütfen kaynak XML URL’sini girin.');
         setXmlShareUrl(null);
+        setXmlProductCount(0);
         return;
       }
 
       setXmlLoading(true);
       setXmlError(null);
       setXmlShareUrl(null);
+      setXmlProductCount(0);
 
       try {
         const params: {
@@ -695,7 +698,10 @@ export default function SquarePadAdminPage() {
           throw new Error('XML feed alınamadı.');
         }
 
-        setXmlPreview(response.data);
+        const xml = response.data;
+        const productCount = (xml.match(/<item>/g) || []).length;
+        setXmlProductCount(productCount);
+        setXmlPreview(xml);
 
         const shareTarget = new URL('/api/square/from-xml-url', window.location.origin);
         const shareParams = new URLSearchParams();
@@ -728,6 +734,7 @@ export default function SquarePadAdminPage() {
         setXmlError(message);
         setXmlPreview('');
         setXmlShareUrl(null);
+        setXmlProductCount(0);
       } finally {
         setXmlLoading(false);
       }
@@ -904,6 +911,7 @@ export default function SquarePadAdminPage() {
             error={xmlError}
             shareUrl={xmlShareUrl}
             preview={xmlPreview}
+            productCount={xmlProductCount}
             onCopyShareUrl={handleXmlCopyShareUrl}
             copyPresentation={xmlCopyPresentation}
           />
