@@ -4,6 +4,10 @@ FROM node:24-slim AS base
 # Install pnpm globally
 RUN corepack enable && corepack prepare pnpm@10.4.1 --activate
 
+# Install OS dependencies
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-certificates \
+	&& rm -rf /var/lib/apt/lists/*
+
 # Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
@@ -12,9 +16,9 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
-# Allow install even if pnpm-lock.yaml is not perfectly in sync with package.json.
-# For a stricter/safer approach, regenerate and commit pnpm-lock.yaml instead of using --no-frozen-lockfile.
-RUN pnpm install --no-frozen-lockfile
+# With --frozen-lockfile, pnpm will fail if pnpm-lock.yaml is out of sync with package.json.
+# This is desirable for reproducible builds.
+RUN pnpm install --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -27,10 +31,6 @@ COPY . .
 # Set environment variables (use key=value form to avoid legacy warnings)
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-
-# Ensure openssl is available for Prisma (Prisma warns if it can't detect libssl).
-RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-certificates \
-	&& rm -rf /var/lib/apt/lists/*
 
 # Generate Prisma Client
 RUN pnpm prisma generate
@@ -48,9 +48,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
-# Ensure runtime has openssl installed for Prisma when required
-RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-certificates \
-	&& rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/public ./public
 
