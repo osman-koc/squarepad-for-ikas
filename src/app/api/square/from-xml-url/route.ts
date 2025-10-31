@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'missing_source' }, { status: 400 });
   }
 
-  const origin = req.nextUrl.origin;
+  const origin = process.env.NEXT_PUBLIC_DEPLOY_URL || req.nextUrl.origin;
 
   try {
     const response = await fetch(sourceUrl);
