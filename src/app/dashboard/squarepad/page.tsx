@@ -699,7 +699,18 @@ export default function SquarePadAdminPage() {
         }
 
         const xml = response.data;
-        const productCount = (xml.match(/<item>/g) || []).length;
+        const itemBlocks = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
+        const groupIds = new Set();
+        let simpleProducts = 0;
+        for (const block of itemBlocks) {
+          const groupIdMatch = block.match(/<g:item_group_id>([\s\S]*?)<\/g:item_group_id>/);
+          if (groupIdMatch && groupIdMatch[1]) {
+            groupIds.add(groupIdMatch[1]);
+          } else {
+            simpleProducts++;
+          }
+        }
+        const productCount = groupIds.size + simpleProducts;
         setXmlProductCount(productCount);
         setXmlPreview(xml);
 
