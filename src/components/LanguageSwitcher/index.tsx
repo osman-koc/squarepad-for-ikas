@@ -49,18 +49,12 @@ export function LanguageSwitcher() {
     // Update state immediately
     setCurrentLocale(languageCode);
     
-    // Force page reload for iframe context
-    console.log('[LanguageSwitcher] Reloading page...');
+    // Reload the current iframe/window
+    console.log('[LanguageSwitcher] Reloading current window...');
     
-    // Use setTimeout to ensure state is saved before reload
     setTimeout(() => {
-      if (window.parent !== window) {
-        // We're in an iframe - use parent location
-        window.parent.location.reload();
-      } else {
-        // Not in iframe - regular reload
-        window.location.reload();
-      }
+      // Simply reload the current window (works in iframe)
+      window.location.reload();
     }, 100);
   };
 
