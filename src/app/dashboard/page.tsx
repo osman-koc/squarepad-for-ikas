@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { AppBridgeHelper } from '@ikas/app-helpers';
 import { TokenHelpers } from '@/helpers/token-helpers';
 import { ApiRequests } from '@/lib/api-requests';
 import HomePage from '../../components/home-page';
@@ -38,6 +39,11 @@ export default function DashboardPage() {
       console.error('Error initializing dashboard:', error);
     }
   }, [fetchStoreName]);
+
+  // Close ikas platform loader on mount
+  useEffect(() => {
+    AppBridgeHelper.closeLoader();
+  }, []);
 
   // Run initialization on mount
   useEffect(() => {
