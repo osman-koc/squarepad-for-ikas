@@ -1,10 +1,11 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import type { TabId } from '@/types/squarepad';
+import { useTranslations } from 'next-intl';
 
 type TabDefinition = {
   id: TabId;
-  label: string;
-  description: string;
 };
 
 type TabSwitcherProps = {
@@ -14,6 +15,8 @@ type TabSwitcherProps = {
 };
 
 export function SquarePadTabSwitcher({ tabs, activeTab, onTabChange }: TabSwitcherProps) {
+  const t = useTranslations('squarepad.tabs');
+  
   const active = tabs.find((tab) => tab.id === activeTab);
 
   return (
@@ -29,11 +32,11 @@ export function SquarePadTabSwitcher({ tabs, activeTab, onTabChange }: TabSwitch
             }`}
             onClick={() => onTabChange(tab.id)}
           >
-            {tab.label}
+            {t(`${tab.id}.label`)}
           </Button>
         ))}
       </div>
-      {active?.description ? <p className="text-sm text-muted-foreground">{active.description}</p> : null}
+      {active ? <p className="text-sm text-muted-foreground">{t(`${active.id}.description`)}</p> : null}
     </div>
   );
 }

@@ -1,16 +1,20 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
+
 type SectionHeaderProps = {
-  title: string;
-  description: string;
-  eyebrow?: string;
+  translationKey: string;
 };
 
-export function SectionHeader({ title, description, eyebrow }: SectionHeaderProps) {
+export function SectionHeader({ translationKey }: SectionHeaderProps) {
+  const t = useTranslations(`squarepad.headers.${translationKey}`);
+  
   return (
     <div className="space-y-2">
-      {eyebrow ? <p className="text-xs font-medium uppercase tracking-wide text-primary/80">{eyebrow}</p> : null}
+      <p className="text-xs font-medium uppercase tracking-wide text-primary/80">{t('eyebrow')}</p>
       <div>
-        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <h2 className="text-lg font-semibold text-foreground">{t('title')}</h2>
+        <p className="text-sm text-muted-foreground">{t('description')}</p>
       </div>
     </div>
   );

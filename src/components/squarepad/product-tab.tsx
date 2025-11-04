@@ -85,11 +85,7 @@ export function ProductTab({
   return (
     <Card>
       <CardHeader>
-        <SectionHeader
-          eyebrow="Ürün Katalog"
-          title="Katalogdan ürün seçerek kare görsel oluşturun"
-          description="Ürünleri arayın, görsellerini inceleyin ve kare formata dönüştürmek istediğiniz görseli seçin."
-        />
+        <SectionHeader translationKey="product" />
       </CardHeader>
       <CardContent>
         <form className="space-y-6" onSubmit={onSubmit}>

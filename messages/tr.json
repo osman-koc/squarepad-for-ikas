@@ -1,0 +1,174 @@
+{
+  "common": {
+    "loading": "Lütfen bekleyin...",
+    "error": "Bir hata oluştu",
+    "success": "Başarılı",
+    "cancel": "İptal",
+    "confirm": "Onayla",
+    "save": "Kaydet",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "close": "Kapat",
+    "submit": "Gönder",
+    "search": "Ara",
+    "copy": "Kopyala",
+    "copied": "Kopyalandı",
+    "download": "İndir",
+    "upload": "Yükle",
+    "preview": "Önizle",
+    "generate": "Oluştur",
+    "select": "Seç",
+    "clear": "Temizle"
+  },
+  "auth": {
+    "required": "Kimlik Doğrulama Gerekli",
+    "requiredMessage": "Webhook'ları yönetmek için lütfen kimliğinizi doğrulayın."
+  },
+  "home": {
+    "congratulations": "Tebrikler!",
+    "authenticated": "kimlik doğrulaması yapıldı",
+    "authenticatedTo": "Kimlik doğrulama yapıldı:"
+  },
+  "squarepad": {
+    "title": "Ürün görsellerinizi kare formata taşıyın",
+    "subtitle": "Katalogdan, URL'den veya XML feed'inden kare görseller üretip ekibinizle saniyeler içinde paylaşın.",
+    "features": {
+      "catalog": "Katalog",
+      "imageUrl": "Görsel URL",
+      "xmlFeed": "XML Feed"
+    },
+    "tabs": {
+      "xml": {
+        "label": "XML Feed",
+        "description": "XML feed'inizi kare görsellerle güncelleyin"
+      },
+      "image": {
+        "label": "Görsel URL",
+        "description": "Herhangi bir görsel URL'sini kare formata dönüştürün"
+      },
+      "product": {
+        "label": "Ürün Katalog",
+        "description": "Katalogdan ürün seçerek kare görsel oluşturun"
+      }
+    },
+    "form": {
+      "imageUrl": {
+        "label": "Görsel URL",
+        "placeholder": "https://cdn.ikas.com/media/product-image.jpg",
+        "description": "CDN veya ürün sayfası üzerindeki görsel bağlantısını doğrudan kullanabilirsiniz.",
+        "required": "Lütfen dönüştürülecek görsel URL'sini girin."
+      },
+      "xmlUrl": {
+        "label": "Kaynak XML URL'si",
+        "placeholder": "https://example.com/feed.xml",
+        "description": "Feed, kare görsellerle güncellenecek ve aynı parametrelerle paylaşılabilir bağlantı oluşturulacak.",
+        "required": "Lütfen kaynak XML URL'sini girin.",
+        "hint": "XML dönüştürme, ikas'ın Product Exporter uygulaması tarafından oluşturulan XML'i dönüştürmek üzerine kurgulanmıştır. Bu XML'deki <g:image_link> ve <g:additional_image_link> tag'lerinde yer alan görsel linklerini 1:1 formatlanmış halleriyle değiştirerek yeni bir xml linki oluşturuyor."
+      },
+      "size": {
+        "label": "Çıktı Boyutu (px)",
+        "tooltip": "Kare görselin genişlik ve yüksekliğini piksel cinsinden belirler.",
+        "tooltipXml": "Kare görsellerin piksel boyutlarını ayarlayın."
+      },
+      "align": {
+        "label": "Yerleşim",
+        "tooltip": "Görsel kare alan içinde nasıl hizalansın?",
+        "options": {
+          "center": "Ortala",
+          "top": "Üst",
+          "bottom": "Alt",
+          "left": "Sol",
+          "right": "Sağ"
+        }
+      },
+      "format": {
+        "label": "Format",
+        "tooltip": "Çıktı dosya türünü seçin. Auto seçeneği tarayıcıya göre uygun formatı üretir.",
+        "options": {
+          "auto": "Auto",
+          "jpeg": "JPEG",
+          "jpg": "JPG",
+          "png": "PNG",
+          "webp": "WebP",
+          "avif": "AVIF"
+        }
+      },
+      "background": {
+        "label": "Arka Plan Rengi",
+        "tooltip": "Görselin dışındaki alanın rengini hex formatında girin.",
+        "placeholder": "#ffffff"
+      },
+      "product": {
+        "select": "Ürün Seç",
+        "selectTooltip": "Ürün seçme penceresini açarak katalogdaki ürünleri ve görsellerini inceleyin.",
+        "hint": "Ürün adı, ID veya SKU ile arama yapabilir; seçtiğiniz ürünün görsellerini onay penceresi içinden yönetebilirsiniz.",
+        "selected": "Seçili Ürün ve Görsel",
+        "changeImage": "Görseli değiştir",
+        "clearSelection": "Seçimi temizle",
+        "noImageSelected": "Henüz görsel seçilmedi.",
+        "noProductSelected": "Ürün ve görsel seçildikten sonra formun diğer alanlarını doldurup kare görseli oluşturabilirsiniz."
+      }
+    },
+    "buttons": {
+      "generateSquare": "Kare Görsel Oluştur",
+      "generating": "Oluşturuluyor…"
+    },
+    "productDialog": {
+      "title": "Ürün ve Görsel Seç",
+      "description": "Kataloğunuzdan bir ürün seçin, görsellerini inceleyin ve kare format için kullanılacak olanı belirleyin.",
+      "searchPlaceholder": "Ürün adı, ID veya SKU ile ara",
+      "loading": "Ürünler yükleniyor…",
+      "noResults": "Aramanıza uygun ürün bulunamadı.",
+      "sku": "SKU",
+      "skuUnknown": "Bilgi yok",
+      "imagesLoading": "Görseller yükleniyor…",
+      "imagesCount": "görsel",
+      "imagesLoadOnSelect": "Görseller seçildiğinde yüklenir",
+      "selectImage": "Kullanmak istediğiniz görseli seçin:",
+      "noImages": "Bu ürüne ait görsel bulunamadı.",
+      "confirmSelection": "Seçimi Onayla"
+    },
+    "preview": {
+      "title": "Önizleme",
+      "downloadImage": "Görseli indir",
+      "shareTitle": "Paylaşım Linki",
+      "shareDescription": "Bu bağlantıyı kullanarak görseli doğrudan paylaşabilirsiniz.",
+      "shareCopy": "Linki kopyala",
+      "shareCopied": "Link kopyalandı",
+      "feedStats": "Feed İstatistikleri",
+      "productsProcessed": "ürün işlendi",
+      "xmlPreview": "XML Önizleme",
+      "firstProducts": "İlk {{count}} ürün",
+      "downloadXml": "XML'i indir"
+    },
+    "headers": {
+      "xml": {
+        "eyebrow": "XML Feed",
+        "title": "XML feed'inizi kare görsellerle güncelleyin",
+        "description": "Kaynak XML'i girin, kare görsel parametrelerini belirleyin ve güncellenmiş çıktıyı indirin."
+      },
+      "image": {
+        "eyebrow": "Görsel URL",
+        "title": "Bir görsel bağlantısını kare formata dönüştürün",
+        "description": "Herhangi bir görsel URL'sini girin, hizalama ve arka plan tercihlerini belirleyin."
+      },
+      "product": {
+        "eyebrow": "Ürün Katalog",
+        "title": "Katalogdan ürün seçerek kare görsel oluşturun",
+        "description": "Ürünleri arayın, görsellerini inceleyin ve kare formata dönüştürmek istediğiniz görseli seçin."
+      }
+    },
+    "selectedProduct": {
+      "title": "Seçili Ürün ve Görselleri",
+      "changeImage": "Seçili görseli değiştir",
+      "imagesLoading": "Görseller yükleniyor…",
+      "selectImage": "Kullanmak istediğiniz görseli seçin:",
+      "noImages": "Bu ürüne ait görsel bulunamadı."
+    }
+  },
+  "language": {
+    "select": "Dil Seç",
+    "tr": "Türkçe",
+    "en": "English"
+  }
+}

@@ -52,11 +52,7 @@ export function XmlTab({
   return (
     <Card>
       <CardHeader>
-        <SectionHeader
-          eyebrow="XML Feed"
-          title="XML feed'inizi kare görsellerle güncelleyin"
-          description="Kaynak XML'i girin, kare görsel parametrelerini belirleyin ve güncellenmiş çıktıyı indirin."
-        />
+        <SectionHeader translationKey="xml" />
       </CardHeader>
       <CardContent>
         <InlineHint>

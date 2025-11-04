@@ -11,6 +11,7 @@ import { ProductTab } from '@/components/squarepad/product-tab';
 import { ImageTab } from '@/components/squarepad/image-tab';
 import { XmlTab } from '@/components/squarepad/xml-tab';
 import { ProductSelectionDialog } from '@/components/squarepad/product-selection-dialog';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import type { AlignOption, FormatOption, ProductImageOption, ProductSummary, TabId } from '@/types/squarepad';
 import type { CopyFeedback } from '@/types/ui';
 
@@ -831,26 +832,12 @@ export default function SquarePadAdminPage() {
   const tabItems = useMemo(
     () =>
       [
-        {
-          id: 'xml' as TabId,
-          label: 'XML Feed',
-          description: 'Mevcut ürün feed’inizdeki görselleri kare URL’lerle güncelleyin.',
-        },
-        {
-          id: 'product' as TabId,
-          label: 'Ürün Katalog',
-          description: 'Katalog ürünlerinizden kare görseller üretin.',
-        },
-        {
-          id: 'image' as TabId,
-          label: 'Görsel URL',
-          description: 'Tekil bir görsel bağlantısını kare formata dönüştürün.',
-        },
+        { id: 'xml' as TabId },
+        { id: 'product' as TabId },
+        { id: 'image' as TabId },
       ],
     [],
-  );
-
-  const productCardImagesLoading = useMemo(() => (selectedProduct ? productImagesLoadingId === selectedProduct.id : false), [productImagesLoadingId, selectedProduct]);
+  );  const productCardImagesLoading = useMemo(() => (selectedProduct ? productImagesLoadingId === selectedProduct.id : false), [productImagesLoadingId, selectedProduct]);
 
   const handleTabChange = useCallback(
     (tab: TabId) => {
@@ -867,6 +854,9 @@ export default function SquarePadAdminPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 pb-12 pt-10">
+        <div className="flex justify-end">
+          <LanguageSwitcher />
+        </div>
         <SquarePadHeader tokenError={tokenError} />
         <SquarePadTabSwitcher tabs={tabItems} activeTab={activeTab} onTabChange={handleTabChange} />
         {activeTab === 'product' ? (

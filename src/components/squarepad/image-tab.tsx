@@ -50,7 +50,7 @@ export function ImageTab({
   return (
     <Card>
       <CardHeader>
-        <SectionHeader eyebrow="Görsel URL" title="Bir görsel bağlantısını kare formata dönüştürün" description="Herhangi bir görsel URL’sini girin, hizalama ve arka plan tercihlerini belirleyin." />
+        <SectionHeader translationKey="image" />
       </CardHeader>
       <CardContent>
         <form className="space-y-6" onSubmit={onSubmit}>
