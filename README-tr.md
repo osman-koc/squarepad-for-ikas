@@ -2,7 +2,7 @@
 
 SquarePad, ikas mağazalarına yönelik **çok mağazalı (multi-tenant)** bir Next.js 15 App Router uygulamasıdır; OAuth, Prisma, GraphQL (codegen), Tailwind + shadcn/ui ve güvenli sunucu rotalarını bir araya getirerek ikas kontrol paneli içinde ürün kataloğu destekli kare görsel araçları sağlar.
 
-![SquarePad dashboard ekran görüntüsü](public/screenshot.png)
+![SquarePad dashboard ekran görüntüsü](public/screenshots/sp-ss-tr-01.png)
 
 > **🏢 Çok Mağazalı Mimari**: Bu uygulama birçok ikas mağazasına bağımsız olarak hizmet verir. Her mağaza OAuth ile yetkilendirme yapar ve kendi token'ı veritabanında saklanır.
 > 
