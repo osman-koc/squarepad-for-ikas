@@ -30,49 +30,42 @@ function buildSquareUrl(origin: string, imageUrl: string, params: URLSearchParam
 
 function replaceImageLinks(xml: string, origin: string, params: URLSearchParams): string {
   // Replace both <g:image_link> and <g:additional_image_link> tags
-  const tagPatterns = [
-    /(<g:image_link[^>]*>)([\s\S]*?)(<\/g:image_link>)/gi,
-    /(<g:additional_image_link[^>]*>)([\s\S]*?)(<\/g:additional_image_link>)/gi,
-  ];
+  // Use a single regex that matches both tag types
+  const regex = /(<g:(image_link|additional_image_link)[^>]*>)([\s\S]*?)(<\/g:\2>)/gi;
 
-  let result = xml;
-  for (const regex of tagPatterns) {
-    result = result.replace(regex, (match, openTag: string, content: string, closeTag: string) => {
-      const leadingWhitespace = content.match(/^\s*/)?.[0] ?? '';
-      const trailingWhitespace = content.match(/\s*$/)?.[0] ?? '';
-      const inner = content.slice(leadingWhitespace.length, content.length - trailingWhitespace.length);
+  return xml.replace(regex, (match, openTag: string, _tagName: string, content: string, closeTag: string) => {
+    const leadingWhitespace = content.match(/^\s*/)?.[0] ?? '';
+    const trailingWhitespace = content.match(/\s*$/)?.[0] ?? '';
+    const inner = content.slice(leadingWhitespace.length, content.length - trailingWhitespace.length);
 
-      if (!inner) {
-        return match;
-      }
+    if (!inner) {
+      return match;
+    }
 
-      let rawLink = inner;
-      let useCdata = false;
+    let rawLink = inner;
+    let useCdata = false;
 
-      if (rawLink.startsWith('<![CDATA[') && rawLink.endsWith(']]>')) {
-        rawLink = rawLink.slice(9, -3);
-        useCdata = true;
-      }
+    if (rawLink.startsWith('<![CDATA[') && rawLink.endsWith(']]>')) {
+      rawLink = rawLink.slice(9, -3);
+      useCdata = true;
+    }
 
-      const normalised = rawLink.trim();
-      if (!normalised) {
-        return match;
-      }
+    const normalised = rawLink.trim();
+    if (!normalised) {
+      return match;
+    }
 
-      let transformed: string;
-      try {
-        transformed = buildSquareUrl(origin, normalised, params);
-      } catch {
-        return match;
-      }
+    let transformed: string;
+    try {
+      transformed = buildSquareUrl(origin, normalised, params);
+    } catch {
+      return match;
+    }
 
-      const safeContent = useCdata ? `<![CDATA[${transformed}]]>` : escapeXml(transformed);
-      const replacedContent = `${leadingWhitespace}${safeContent}${trailingWhitespace}`;
-      return `${openTag}${replacedContent}${closeTag}`;
-    });
-  }
-
-  return result;
+    const safeContent = useCdata ? `<![CDATA[${transformed}]]>` : escapeXml(transformed);
+    const replacedContent = `${leadingWhitespace}${safeContent}${trailingWhitespace}`;
+    return `${openTag}${replacedContent}${closeTag}`;
+  });
 }
 
 export async function GET(req: NextRequest) {
