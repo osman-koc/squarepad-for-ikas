@@ -23,7 +23,7 @@ export function SquarePadHeader({ tokenError }: SquarePadHeaderProps) {
         </div>
         <div className="flex flex-col gap-3 md:items-end">
           <LanguageSwitcher />
-          <p className="text-sm text-muted-foreground md:text-right">{t('subtitle')}</p>
+          {/* <p className="text-sm text-muted-foreground md:text-right">{t('subtitle')}</p> */}
         </div>
       </div>
       {tokenError ? (
