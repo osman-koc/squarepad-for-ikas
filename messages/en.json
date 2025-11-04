@@ -145,7 +145,8 @@
       "shareDescriptionShort": "Share the URL or add it to your automations.",
       "shareDescriptionXml": "Share this URL to serve the feed updated with square images.",
       "imageAlt": "Square image preview",
-      "productsProcessed": "{count} products found and processed."
+      "productsProcessed": "{count} products found and processed.",
+      "downloadImage": "Download image"
     },
     "headers": {
       "xml": {

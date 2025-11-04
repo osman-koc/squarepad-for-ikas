@@ -145,7 +145,8 @@
       "shareDescriptionShort": "URL'yi paylaşın veya otomasyonlarınıza ekleyin.",
       "shareDescriptionXml": "Bu URL'yi paylaşarak kare görsellerle güncellenmiş feed'i servis edin.",
       "imageAlt": "Kare görsel önizleme",
-      "productsProcessed": "{count} ürün bulundu ve işlendi."
+      "productsProcessed": "{count} ürün bulundu ve işlendi.",
+      "downloadImage": "Görseli indir"
     },
     "headers": {
       "xml": {
