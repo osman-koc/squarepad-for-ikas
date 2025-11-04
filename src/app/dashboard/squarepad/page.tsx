@@ -11,7 +11,6 @@ import { ProductTab } from '@/components/squarepad/product-tab';
 import { ImageTab } from '@/components/squarepad/image-tab';
 import { XmlTab } from '@/components/squarepad/xml-tab';
 import { ProductSelectionDialog } from '@/components/squarepad/product-selection-dialog';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import type { AlignOption, FormatOption, ProductImageOption, ProductSummary, TabId } from '@/types/squarepad';
 import type { CopyFeedback } from '@/types/ui';
 
@@ -854,9 +853,6 @@ export default function SquarePadAdminPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 pb-12 pt-10">
-        <div className="flex justify-end">
-          <LanguageSwitcher />
-        </div>
         <SquarePadHeader tokenError={tokenError} />
         <SquarePadTabSwitcher tabs={tabItems} activeTab={activeTab} onTabChange={handleTabChange} />
         {activeTab === 'product' ? (

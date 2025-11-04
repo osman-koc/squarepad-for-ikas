@@ -37,10 +37,13 @@ export function LanguageSwitcher() {
     // Set cookie with 1 year expiration
     const expiryDate = new Date();
     expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-    document.cookie = `NEXT_LOCALE=${languageCode}; path=/; expires=${expiryDate.toUTCString()}`;
+    document.cookie = `NEXT_LOCALE=${languageCode}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax`;
     
     // Also set in localStorage as backup
     localStorage.setItem('NEXT_LOCALE', languageCode);
+    
+    console.log('Language changed to:', languageCode);
+    console.log('Cookie set:', document.cookie);
     
     // Reload page to apply new locale
     window.location.reload();

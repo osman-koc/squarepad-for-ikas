@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 type SquarePadHeaderProps = {
   tokenError: string | null;
@@ -20,22 +21,9 @@ export function SquarePadHeader({ tokenError }: SquarePadHeaderProps) {
             <h1 className="text-2xl font-semibold text-foreground">{t('title')}</h1>
           </div>
         </div>
-        <div className="space-y-3 md:max-w-sm md:text-right">
-          <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
-          <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground md:justify-end">
-            <span className="inline-flex items-center gap-2 rounded-full border border-muted/60 bg-background/80 px-3 py-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-              {t('features.catalog')}
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-muted/60 bg-background/80 px-3 py-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-              {t('features.imageUrl')}
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-muted/60 bg-background/80 px-3 py-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-              {t('features.xmlFeed')}
-            </span>
-          </div>
+        <div className="flex flex-col gap-3 md:items-end">
+          <LanguageSwitcher />
+          <p className="text-sm text-muted-foreground md:text-right">{t('subtitle')}</p>
         </div>
       </div>
       {tokenError ? (
