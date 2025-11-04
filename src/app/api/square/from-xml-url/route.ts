@@ -29,23 +29,23 @@ function buildSquareUrl(origin: string, imageUrl: string, params: URLSearchParam
 }
 
 function replaceImageLinks(xml: string, origin: string, params: URLSearchParams): string {
-  // Replace <g:image_link> tags
-  let result = xml.replace(
+  // First pass: replace <g:image_link> tags only
+  const afterImageLink = xml.replace(
     /(<g:image_link[^>]*>)([\s\S]*?)(<\/g:image_link>)/gi,
     (match, openTag: string, content: string, closeTag: string) => {
       return processImageLink(match, openTag, content, closeTag, origin, params);
     }
   );
 
-  // Replace <g:additional_image_link> tags
-  result = result.replace(
+  // Second pass: replace <g:additional_image_link> tags only
+  const afterAdditionalImageLink = afterImageLink.replace(
     /(<g:additional_image_link[^>]*>)([\s\S]*?)(<\/g:additional_image_link>)/gi,
     (match, openTag: string, content: string, closeTag: string) => {
       return processImageLink(match, openTag, content, closeTag, origin, params);
     }
   );
 
-  return result;
+  return afterAdditionalImageLink;
 }
 
 function processImageLink(
