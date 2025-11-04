@@ -7,15 +7,14 @@ export type Locale = (typeof locales)[number];
 export const defaultLocale: Locale = 'tr';
 
 export default getRequestConfig(async () => {
-  // First, try to get locale from middleware header
+  // Try multiple sources for locale
   const headersList = await headers();
   const localeFromHeader = headersList.get('x-locale');
   
-  // Fallback to cookie
   const cookieStore = await cookies();
   const localeCookie = cookieStore.get('NEXT_LOCALE')?.value;
   
-  // Determine the locale
+  // Determine the locale with priority: header > cookie > default
   let locale: Locale = defaultLocale;
   
   if (localeFromHeader && locales.includes(localeFromHeader as Locale)) {
@@ -26,7 +25,7 @@ export default getRequestConfig(async () => {
 
   console.log('[i18n] Header locale:', localeFromHeader);
   console.log('[i18n] Cookie locale:', localeCookie);
-  console.log('[i18n] Selected locale:', locale);
+  console.log('[i18n] Final locale:', locale);
 
   return {
     locale,

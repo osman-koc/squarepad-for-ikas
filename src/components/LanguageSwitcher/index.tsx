@@ -22,31 +22,46 @@ export function LanguageSwitcher() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // Get current locale from cookie
-    const locale = document.cookie
-      .split('; ')
-      .find((row) => row.startsWith('NEXT_LOCALE='))
-      ?.split('=')[1];
+    // Get current locale from localStorage (more reliable in iframe)
+    const storedLocale = localStorage.getItem('NEXT_LOCALE');
     
-    if (locale === 'tr' || locale === 'en') {
-      setCurrentLocale(locale);
+    if (storedLocale === 'tr' || storedLocale === 'en') {
+      setCurrentLocale(storedLocale);
     }
   }, []);
 
   const handleLanguageChange = (languageCode: 'tr' | 'en') => {
-    // Set cookie with 1 year expiration
-    const expiryDate = new Date();
-    expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-    document.cookie = `NEXT_LOCALE=${languageCode}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax`;
+    console.log('[LanguageSwitcher] Changing language to:', languageCode);
     
-    // Also set in localStorage as backup
+    // Store in localStorage
     localStorage.setItem('NEXT_LOCALE', languageCode);
     
-    console.log('Language changed to:', languageCode);
-    console.log('Cookie set:', document.cookie);
+    // Try to set cookie (may not work in iframe due to cross-origin)
+    try {
+      const expiryDate = new Date();
+      expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+      document.cookie = `NEXT_LOCALE=${languageCode}; path=/; expires=${expiryDate.toUTCString()}; SameSite=None; Secure`;
+      console.log('[LanguageSwitcher] Cookie set attempt completed');
+    } catch (error) {
+      console.error('[LanguageSwitcher] Cookie set failed:', error);
+    }
     
-    // Reload page to apply new locale
-    window.location.reload();
+    // Update state immediately
+    setCurrentLocale(languageCode);
+    
+    // Force page reload for iframe context
+    console.log('[LanguageSwitcher] Reloading page...');
+    
+    // Use setTimeout to ensure state is saved before reload
+    setTimeout(() => {
+      if (window.parent !== window) {
+        // We're in an iframe - use parent location
+        window.parent.location.reload();
+      } else {
+        // Not in iframe - regular reload
+        window.location.reload();
+      }
+    }, 100);
   };
 
   const currentLanguage = languages.find((lang) => lang.code === currentLocale) || languages[0];

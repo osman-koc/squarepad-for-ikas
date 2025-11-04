@@ -2,6 +2,7 @@ import './globals.css';
 import React from 'react';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
+import { LocaleSync } from '@/components/LocaleSync';
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
@@ -15,6 +16,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <NextIntlClientProvider messages={messages}>
+          <LocaleSync />
           {children}
         </NextIntlClientProvider>
       </body>
