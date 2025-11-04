@@ -1,19 +1,29 @@
 # SquarePad for ikas
 
-SquarePad is a Next.js 15 App Router experience for ikas stores that bundles OAuth, Prisma, GraphQL (codegen), Tailwind + shadcn/ui, and secure server routes to deliver product-catalog powered square image tooling inside the ikas dashboard.
+SquarePad is a **multi-tenant** Next.js 15 App Router experience for ikas stores that bundles OAuth, Prisma, GraphQL (codegen), Tailwind + shadcn/ui, and secure server routes to deliver product-catalog powered square image tooling inside the ikas dashboard.
 
 ![SquarePad dashboard screenshot](public/screenshot.png)
 
+> **🏢 Multi-Tenant Architecture**: This app serves multiple ikas stores independently. Each store authorizes via OAuth and gets its own token stored in the database.
+> 
+> **📚 Quick Links:**
+> - 🚀 [Quick Start Guide](./QUICKSTART.md) - Get up and running in 10 minutes
+> - 📖 [Multi-Tenant Setup Details](./MULTI-TENANT-SETUP.md) - Complete architecture documentation
+> - 🎯 [Summary](./MULTI-TENANT-SUMMARY.md) - TL;DR overview
+> - 📊 [Architecture Diagram](./ARCHITECTURE-DIAGRAM.md) - Visual flow diagrams
+
 ## 🚀 Features
 
+- **Multi-Tenant Support**: Serves unlimited ikas stores with OAuth-based authorization
 - **Next.js 15 + App Router** with React 19 and TypeScript
-- **OAuth for ikas**: end-to-end flow (authorize → callback → session/JWT)
+- **OAuth 2.0 Flow**: Complete end-to-end flow (authorize → callback → session/JWT)
 - **Admin GraphQL client**: `@ikas/admin-api-client` with codegen
-- **Prisma**: local dev DB to store tokens (via `AuthTokenManager`)
+- **Prisma + PostgreSQL**: Multi-tenant token storage via `AuthTokenManager`
 - **Tailwind CSS v4 + shadcn/ui** components
 - **Iron Session** server-side session management
 - **Frontend ↔ Backend bridge** via typed API helpers
 - **SquarePad admin experience** with modular components for product catalog browsing, image transformation, and XML feed updates (iframe friendly)
+- **Automatic token refresh**: Tokens auto-refresh before expiration
 
 ## 📁 Project Structure
 
@@ -95,10 +105,13 @@ Required envs (see `src/globals/config.ts`):
 
 - `NEXT_PUBLIC_GRAPH_API_URL` — ikas Admin GraphQL URL (e.g. `https://api.myikas.com/api/v2/admin/graphql`)
 - `NEXT_PUBLIC_ADMIN_URL` — ikas Admin base with `{storeName}` placeholder (e.g. `https://{storeName}.myikas.com/admin`)
-- `NEXT_PUBLIC_CLIENT_ID` — your ikas app client id
-- `CLIENT_SECRET` — your ikas app client secret
+- `NEXT_PUBLIC_CLIENT_ID` — **your app's client id** from [ikas Developer Portal](https://developer.myikas.com) (same for all stores)
+- `CLIENT_SECRET` — **your app's client secret** from Developer Portal (same for all stores)
 - `NEXT_PUBLIC_DEPLOY_URL` — public base URL of this app (e.g. `https://yourapp.example.com`)
 - `SECRET_COOKIE_PASSWORD` — long random string for iron-session
+- `DATABASE_URL` — PostgreSQL connection string for multi-tenant token storage
+
+> **⚠️ Important**: `CLIENT_ID` and `CLIENT_SECRET` are **NOT** store-specific. They are your application's credentials from ikas Developer Portal, used for all stores.
 
 3) Initialize Prisma (first run)
 
@@ -190,12 +203,28 @@ MCP guidance (required before adding new ops):
 
 ## 🗃️ Database (Prisma)
 
-- Local SQLite DB located under `prisma/dev.db` with schema managed by `schema.prisma`.
-- `AuthTokenManager` persists tokens (`models/auth-token/*`).
+- **PostgreSQL** database for production (multi-tenant token storage)
+- Schema managed by `prisma/schema.prisma`
+- `AuthTokenManager` persists OAuth tokens per store (`models/auth-token/*`)
+- Each store has a unique `authorizedAppId` as the primary key
 - Use Prisma Studio to inspect tokens:
 
 ```bash
 pnpm prisma:studio
+```
+
+### Token Storage Schema
+
+```prisma
+model AuthToken {
+  id              String   @id
+  merchantId      String
+  authorizedAppId String?  @unique  // Unique per store
+  accessToken     String
+  refreshToken    String
+  expireDate      DateTime
+  // ... other fields
+}
 ```
 
 ## 🧩 UI and Styling
@@ -224,8 +253,23 @@ Iframe entegrasyonu sırasında token yönetimi `TokenHelpers` üzerinden yapıl
 
 - Never log secrets or tokens. Do not expose access/refresh tokens to the client.
 - Use the short-lived JWT for browser → server auth; server uses stored OAuth tokens.
-- `onCheckToken` auto-refreshes tokens server-side.
+- `onCheckToken` auto-refreshes tokens server-side before expiration.
 - OAuth callback uses HMAC-SHA256 signature validation to verify authorization code authenticity before token exchange.
+- Each store's tokens are isolated in the database by `authorizedAppId`.
+- **Multi-Tenant Security**: Token isolation ensures no cross-store data access.
+
+## 🏢 Multi-Tenant Guide
+
+For detailed information about the multi-tenant architecture and setup process, see:
+
+📖 **[MULTI-TENANT-SETUP.md](./MULTI-TENANT-SETUP.md)**
+
+Key points:
+- ✅ One application serves many stores
+- ✅ Each store authorizes independently via OAuth
+- ✅ Tokens stored per `authorizedAppId` in PostgreSQL
+- ✅ No code changes needed to add new stores
+- ✅ Store owners install via `/authorize-store` page
 
 ## 📝 License
 

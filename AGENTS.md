@@ -5,6 +5,14 @@
 - TypeScript strict; avoid any. Use precise types from generated GraphQL.
 - Treat API tokens and secrets as sensitive; never log them.
 
+## Multi-Tenant Architecture
+- This app serves **multiple ikas stores** independently using OAuth 2.0.
+- Each store has its own `authorizedAppId` and OAuth tokens stored in PostgreSQL.
+- `CLIENT_ID` and `CLIENT_SECRET` in `.env` are **application-wide credentials** from ikas Developer Portal, NOT store-specific.
+- Token storage is handled by `AuthTokenManager` with isolation per `authorizedAppId`.
+- No code changes needed to add new stores - they self-install via `/authorize-store`.
+- See [MULTI-TENANT-SETUP.md](./MULTI-TENANT-SETUP.md) for detailed architecture documentation.
+
 ## Stack Overview
 - Next.js 15 App Router, React 19, TypeScript, Tailwind + shadcn/ui.
 - ikas Admin GraphQL via `@ikas/admin-api-client` with codegen.

@@ -1,19 +1,29 @@
 # SquarePad for ikas (Next.js 15)
 
-SquarePad, ikas mağazalarına yönelik olarak Next.js 15 App Router deneyimi sunar; OAuth, Prisma, GraphQL (codegen), Tailwind + shadcn/ui ve güvenli sunucu rotalarını bir araya getirerek ikas kontrol paneli içinde ürün kataloğu destekli kare görsel araçları sağlar.
+SquarePad, ikas mağazalarına yönelik **çok mağazalı (multi-tenant)** bir Next.js 15 App Router uygulamasıdır; OAuth, Prisma, GraphQL (codegen), Tailwind + shadcn/ui ve güvenli sunucu rotalarını bir araya getirerek ikas kontrol paneli içinde ürün kataloğu destekli kare görsel araçları sağlar.
 
 ![SquarePad dashboard ekran görüntüsü](public/screenshot.png)
 
+> **🏢 Çok Mağazalı Mimari**: Bu uygulama birçok ikas mağazasına bağımsız olarak hizmet verir. Her mağaza OAuth ile yetkilendirme yapar ve kendi token'ı veritabanında saklanır.
+> 
+> **📚 Hızlı Bağlantılar:**
+> - 🚀 [Hızlı Başlangıç Rehberi](./QUICKSTART.md) - 10 dakikada başlayın
+> - 📖 [Çok Mağazalı Kurulum Detayları](./MULTI-TENANT-SETUP.md) - Eksiksiz mimari dokümantasyonu
+> - 🎯 [Özet](./MULTI-TENANT-SUMMARY.md) - Kısa genel bakış
+> - 📊 [Mimari Diyagram](./ARCHITECTURE-DIAGRAM.md) - Görsel akış şemaları
+
 ## 🚀 Özellikler
 
+- **Çok Mağazalı Destek**: OAuth tabanlı yetkilendirme ile sınırsız ikas mağazasına hizmet verir
 - **Next.js 15 + App Router** (React 19 + TypeScript)
-- **ikas OAuth** uçtan uca akış (yetkilendir → callback → oturum/JWT)
+- **OAuth 2.0 Akışı**: Eksiksiz uçtan uca akış (yetkilendir → callback → oturum/JWT)
 - **Admin GraphQL istemcisi**: `@ikas/admin-api-client` + codegen
-- **Prisma**: OAuth token’larını saklamak için lokal veritabanı (`AuthTokenManager`)
+- **Prisma + PostgreSQL**: Çok mağazalı token saklama (`AuthTokenManager`)
 - **Tailwind CSS v4 + shadcn/ui** bileşenleri
 - **Iron Session** ile sunucu tarafı oturum yönetimi
 - **Frontend ↔ Backend köprüsü**: typed axios yardımcıları
 - **SquarePad yönetici deneyimi**: ürün kataloğunu listeleyip kare görsel üretme, görsel URL dönüştürme ve XML feed güncelleme (iframe uyumlu)
+- **Otomatik token yenileme**: Token'lar süresi dolmadan otomatik yenilenir
 
 ## 📁 Proje Yapısı
 
@@ -94,14 +104,17 @@ pnpm install
 cp .env.example .env.local
 ```
 
-Gerekli env’ler (`src/globals/config.ts`):
+Gerekli env'ler (`src/globals/config.ts`):
 
-- `NEXT_PUBLIC_GRAPH_API_URL`
-- `NEXT_PUBLIC_ADMIN_URL`
-- `NEXT_PUBLIC_CLIENT_ID`
-- `CLIENT_SECRET`
-- `NEXT_PUBLIC_DEPLOY_URL`
-- `SECRET_COOKIE_PASSWORD`
+- `NEXT_PUBLIC_GRAPH_API_URL` — ikas Admin GraphQL URL
+- `NEXT_PUBLIC_ADMIN_URL` — ikas Admin base URL (`{storeName}` placeholder ile)
+- `NEXT_PUBLIC_CLIENT_ID` — **Uygulamanızın client id**'si [ikas Developer Portal](https://developer.myikas.com)'dan (tüm mağazalar için aynı)
+- `CLIENT_SECRET` — **Uygulamanızın client secret**'ı Developer Portal'dan (tüm mağazalar için aynı)
+- `NEXT_PUBLIC_DEPLOY_URL` — Uygulamanızın public URL'i
+- `SECRET_COOKIE_PASSWORD` — iron-session için uzun rastgele string
+- `DATABASE_URL` — Çok mağazalı token saklamak için PostgreSQL bağlantı dizesi
+
+> **⚠️ Önemli**: `CLIENT_ID` ve `CLIENT_SECRET` mağazaya özgü değildir. Bunlar ikas Developer Portal'dan aldığınız **uygulamanızın kimlik bilgileridir** ve tüm mağazalar için aynıdır.
 
 3. Prisma başlangıcı
 
@@ -156,9 +169,25 @@ pnpm dev
 
 ## 🗃️ Veritabanı
 
-- Prisma ile SQLite (`prisma/dev.db`) kullanılmakta.
-- `AuthTokenManager` OAuth tokenlarını saklar.
-- `pnpm prisma:studio` ile kayıtlar incelenebilir.
+- **PostgreSQL** veritabanı production için (çok mağazalı token saklama)
+- Schema `prisma/schema.prisma` ile yönetilir
+- `AuthTokenManager` her mağaza için OAuth token'larını saklar (`models/auth-token/*`)
+- Her mağaza için benzersiz `authorizedAppId` primary key olarak kullanılır
+- `pnpm prisma:studio` ile kayıtlar incelenebilir
+
+### Token Saklama Şeması
+
+```prisma
+model AuthToken {
+  id              String   @id
+  merchantId      String
+  authorizedAppId String?  @unique  // Her mağaza için benzersiz
+  accessToken     String
+  refreshToken    String
+  expireDate      DateTime
+  // ... diğer alanlar
+}
+```
 
 ## 🧩 UI ve Stiller
 
@@ -183,10 +212,25 @@ Seçim diyalogları, ipuçları ve tab bileşenleri yeniden kullanılabilir yap�
 
 ## 🔒 Güvenlik Notları
 
-- Token’ları veya gizli bilgileri loglamayın.
-- Tarayıcı sadece kısa ömürlü JWT kullanır; gerçek OAuth token’ları sunucuda saklanır.
-- `onCheckToken` sunucuda token yenilemeyi otomatik hale getirir.
+- Token'ları veya gizli bilgileri loglamayın.
+- Tarayıcı sadece kısa ömürlü JWT kullanır; gerçek OAuth token'ları sunucuda saklanır.
+- `onCheckToken` sunucuda token yenilemeyi otomatik hale getirir (süresi dolmadan önce).
 - OAuth callback HMAC-SHA256 imza doğrulaması yapar.
+- Her mağazanın token'ları `authorizedAppId` ile veritabanında izole edilir.
+- **Çok Mağazalı Güvenlik**: Token izolasyonu sayesinde mağazalar arası veri erişimi yoktur.
+
+## 🏢 Çok Mağazalı Kurulum Rehberi
+
+Çok mağazalı mimari ve kurulum süreci hakkında detaylı bilgi için:
+
+📖 **[MULTI-TENANT-SETUP.md](./MULTI-TENANT-SETUP.md)**
+
+Ana noktalar:
+- ✅ Tek uygulama birçok mağazaya hizmet verir
+- ✅ Her mağaza OAuth ile bağımsız yetkilendirme yapar
+- ✅ Token'lar PostgreSQL'de `authorizedAppId` ile saklanır
+- ✅ Yeni mağaza eklemek için kod değişikliği gerekmez
+- ✅ Mağaza sahipleri `/authorize-store` sayfasından kurulum yapar
 
 ## 📝 Lisans
 
