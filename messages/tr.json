@@ -55,15 +55,17 @@
       "imageUrl": {
         "label": "Görsel URL",
         "placeholder": "https://cdn.ikas.com/media/product-image.jpg",
-        "description": "CDN veya ürün sayfası üzerindeki görsel bağlantısını doğrudan kullanabilirsiniz.",
-        "required": "Lütfen dönüştürülecek görsel URL'sini girin."
+        "hint": "CDN veya ürün sayfası üzerindeki görsel bağlantısını doğrudan kullanabilirsiniz.",
+        "validationError": "Lütfen dönüştürülecek görsel URL'sini girin."
       },
-      "xmlUrl": {
+      "xml": {
         "label": "Kaynak XML URL'si",
         "placeholder": "https://example.com/feed.xml",
         "description": "Feed, kare görsellerle güncellenecek ve aynı parametrelerle paylaşılabilir bağlantı oluşturulacak.",
-        "required": "Lütfen kaynak XML URL'sini girin.",
-        "hint": "XML dönüştürme, ikas'ın Product Exporter uygulaması tarafından oluşturulan XML'i dönüştürmek üzerine kurgulanmıştır. Bu XML'deki <g:image_link> ve <g:additional_image_link> tag'lerinde yer alan görsel linklerini 1:1 formatlanmış halleriyle değiştirerek yeni bir xml linki oluşturuyor."
+        "validationError": "Lütfen kaynak XML URL'sini girin.",
+        "tooltip": "Kare görsellerle güncellenecek ürün feed'inin adresini girin.",
+        "infoTitle": "XML Dönüştürme Hakkında",
+        "infoText": "XML dönüştürme, ikas'ın Product Exporter uygulaması tarafından oluşturulan XML'i dönüştürmek üzerine kurgulanmıştır. Bu XML'deki görsel linklerini 1:1 formatlanmış halleriyle değiştirerek yeni bir xml linki oluşturuyor."
       },
       "size": {
         "label": "Çıktı Boyutu (px)",
@@ -110,36 +112,40 @@
       }
     },
     "buttons": {
-      "generateSquare": "Kare Görsel Oluştur",
-      "generating": "Oluşturuluyor…"
+      "generateSquare": "Kare Görseli Oluştur",
+      "generating": "Oluşturuluyor…",
+      "updateXmlFeed": "XML Feed'i Güncelle",
+      "generatingXml": "Dönüştürülüyor…",
+      "downloadImage": "Görseli indir"
     },
     "productDialog": {
       "title": "Ürün ve Görsel Seç",
       "description": "Kataloğunuzdan bir ürün seçin, görsellerini inceleyin ve kare format için kullanılacak olanı belirleyin.",
       "searchPlaceholder": "Ürün adı, ID veya SKU ile ara",
       "loading": "Ürünler yükleniyor…",
-      "noResults": "Aramanıza uygun ürün bulunamadı.",
+      "noProducts": "Aramanıza uygun ürün bulunamadı.",
       "sku": "SKU",
       "skuUnknown": "Bilgi yok",
       "imagesLoading": "Görseller yükleniyor…",
-      "imagesCount": "görsel",
-      "imagesLoadOnSelect": "Görseller seçildiğinde yüklenir",
+      "imageCount": "{count} görsel",
+      "imagesWillLoad": "Görseller seçildiğinde yüklenir",
       "selectImage": "Kullanmak istediğiniz görseli seçin:",
       "noImages": "Bu ürüne ait görsel bulunamadı.",
+      "mainImage": "Ana Görsel",
+      "imageIndex": "Görsel {index}",
       "confirmSelection": "Seçimi Onayla"
     },
     "preview": {
       "title": "Önizleme",
-      "downloadImage": "Görseli indir",
-      "shareTitle": "Paylaşım Linki",
-      "shareDescription": "Bu bağlantıyı kullanarak görseli doğrudan paylaşabilirsiniz.",
-      "shareCopy": "Linki kopyala",
-      "shareCopied": "Link kopyalandı",
-      "feedStats": "Feed İstatistikleri",
-      "productsProcessed": "ürün işlendi",
-      "xmlPreview": "XML Önizleme",
-      "firstProducts": "İlk {{count}} ürün",
-      "downloadXml": "XML'i indir"
+      "description": "Oluşturulan kare görseli kontrol edin ve dilediğiniz formatta indirin.",
+      "descriptionImage": "Seçilen görselin kare versiyonunu kontrol edin.",
+      "descriptionXml": "XML çıktısının ilgili bölümlerini kontrol edin.",
+      "shareTitle": "Paylaşılabilir bağlantı",
+      "shareDescription": "URL'yi e-ticaret ekipleriyle paylaşabilir veya kampanya araçlarınıza ekleyebilirsiniz.",
+      "shareDescriptionShort": "URL'yi paylaşın veya otomasyonlarınıza ekleyin.",
+      "shareDescriptionXml": "Bu URL'yi paylaşarak kare görsellerle güncellenmiş feed'i servis edin.",
+      "imageAlt": "Kare görsel önizleme",
+      "productsProcessed": "{count} ürün bulundu ve işlendi."
     },
     "headers": {
       "xml": {

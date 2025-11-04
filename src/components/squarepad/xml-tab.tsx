@@ -1,10 +1,10 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { InfoTooltip } from '@/components/squarepad/info-tooltip';
-import { InlineHint } from '@/components/squarepad/inline-hint';
 import { SectionHeader } from '@/components/squarepad/section-header';
 import { ALIGN_OPTIONS, FORMAT_OPTIONS } from '@/constants/squarepad';
 import type { AlignOption, FormatOption } from '@/types/squarepad';
@@ -49,40 +49,50 @@ export function XmlTab({
   onCopyShareUrl,
   copyPresentation,
 }: XmlTabProps) {
+  const tForm = useTranslations('squarepad.form');
+  const tButtons = useTranslations('squarepad.buttons');
+  const tPreview = useTranslations('squarepad.preview');
+
+  const infoContent = (
+    <div className="space-y-2">
+      <p className="text-sm">
+        {tForm('xml.infoText')}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">&lt;g:image_link&gt;</code>
+        <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">&lt;g:additional_image_link&gt;</code>
+      </div>
+    </div>
+  );
+
   return (
     <Card>
       <CardHeader>
-        <SectionHeader translationKey="xml" />
+        <SectionHeader translationKey="xml" infoContent={infoContent} infoTitle={tForm('xml.infoTitle')} />
       </CardHeader>
       <CardContent>
-        <InlineHint>
-          XML dönüştürme, ikas&apos;ın Product Exporter uygulaması tarafından oluşturulan XML&apos;i dönüştürmek üzerine kurgulanmıştır. Bu XML&apos;deki{' '}
-          <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">&lt;g:image_link&gt;</code> ve{' '}
-          <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">&lt;g:additional_image_link&gt;</code> tag&apos;lerinde yer alan görsel linklerini 1:1
-          formatlanmış halleriyle değiştirerek yeni bir xml linki oluşturuyor.
-        </InlineHint>
         <form className="space-y-6" onSubmit={onSubmit}>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2 space-y-2">
               <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="xml-source-input">
-                Kaynak XML URL&apos;si
-                <InfoTooltip message="Kare görsellerle güncellenecek ürün feed’inin adresini girin." />
+                {tForm('xml.label')}
+                <InfoTooltip message={tForm('xml.tooltip')} />
               </label>
               <Input
                 id="xml-source-input"
-                placeholder="https://example.com/feed.xml"
+                placeholder={tForm('xml.placeholder')}
                 value={form.source}
                 onChange={(event) => onFormUpdate({ source: event.target.value })}
-                onInvalid={(event) => event.currentTarget.setCustomValidity('Lütfen kaynak XML URL’sini girin.')}
+                onInvalid={(event) => event.currentTarget.setCustomValidity(tForm('xml.validationError'))}
                 onInput={(event) => event.currentTarget.setCustomValidity('')}
                 required
               />
-              <p className="text-xs text-muted-foreground">Feed, kare görsellerle güncellenecek ve aynı parametrelerle paylaşılabilir bağlantı oluşturulacak.</p>
+              <p className="text-xs text-muted-foreground">{tForm('xml.description')}</p>
             </div>
             <div className="space-y-2">
               <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="xml-size-input">
-                Çıktı Boyutu (px)
-                <InfoTooltip message="Kare görsellerin piksel boyutlarını ayarlayın." />
+                {tForm('size.label')}
+                <InfoTooltip message={tForm('size.tooltip')} />
               </label>
               <Input
                 id="xml-size-input"
@@ -95,8 +105,8 @@ export function XmlTab({
             </div>
             <div className="space-y-2">
               <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="xml-align-select">
-                Yerleşim
-                <InfoTooltip message="Görsel kare alan içinde nasıl hizalansın?" />
+                {tForm('align.label')}
+                <InfoTooltip message={tForm('align.tooltip')} />
               </label>
               <select
                 id="xml-align-select"
@@ -106,15 +116,15 @@ export function XmlTab({
               >
                 {ALIGN_OPTIONS.map((align) => (
                   <option key={align} value={align}>
-                    {align}
+                    {tForm(`align.options.${align}`)}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
               <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="xml-format-select">
-                Format
-                <InfoTooltip message="Çıktı dosya türünü belirleyin. Auto seçeneği tarayıcı uyumuna göre karar verir." />
+                {tForm('format.label')}
+                <InfoTooltip message={tForm('format.tooltip')} />
               </label>
               <select
                 id="xml-format-select"
@@ -124,15 +134,15 @@ export function XmlTab({
               >
                 {FORMAT_OPTIONS.map((format) => (
                   <option key={format} value={format}>
-                    {format.toUpperCase()}
+                    {tForm(`format.options.${format}`)}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
               <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="xml-bg-input">
-                Arka Plan
-                <InfoTooltip message="Kare içindeki boş alanların rengini seçin." />
+                {tForm('background.label')}
+                <InfoTooltip message={tForm('background.tooltip')} />
               </label>
               <div className="flex items-center gap-3">
                 <Input
@@ -147,7 +157,7 @@ export function XmlTab({
                   }}
                 />
                 <Input
-                  aria-label="Arka plan hex"
+                  aria-label={tForm('background.label')}
                   className="max-w-[140px]"
                   value={bgDraft.toUpperCase()}
                   onChange={(event) => {
@@ -169,18 +179,18 @@ export function XmlTab({
 
           <div className="flex flex-wrap items-center gap-3">
             <Button type="submit" disabled={loading || !hasToken}>
-              {loading ? 'Dönüştürülüyor…' : 'XML Feed’i Güncelle'}
+              {loading ? tButtons('generatingXml') : tButtons('updateXmlFeed')}
             </Button>
           </div>
 
           {(shareUrl || preview) && (
             <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
               {shareUrl ? (
-                <div className="space-y-4 rounded-lg border border-muted/70 bg-muted/20 p-4">
+                                <div className="space-y-4 rounded-lg border border-muted/70 bg-muted/20 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-foreground">Paylaşılabilir bağlantı</p>
-                      <p className="text-xs text-muted-foreground">Bu URL’yi paylaşarak kare görsellerle güncellenmiş feed’i servis edin.</p>
+                      <p className="text-sm font-semibold text-foreground">{tPreview('shareTitle')}</p>
+                      <p className="text-xs text-muted-foreground">{tPreview('shareDescriptionXml')}</p>
                     </div>
                     <Button type="button" variant={copyPresentation.variant} size="sm" onClick={onCopyShareUrl}>
                       {copyPresentation.label}
@@ -188,7 +198,7 @@ export function XmlTab({
                   </div>
                   <p className="break-all rounded-md border border-muted/80 bg-background/90 px-3 py-2 text-xs text-muted-foreground">{shareUrl}</p>
                   {productCount > 0 ? (
-                    <p className="text-sm text-muted-foreground">{productCount} ürün bulundu ve işlendi.</p>
+                    <p className="text-sm text-muted-foreground">{tPreview('productsProcessed').replace('{count}', productCount.toString())}</p>
                   ) : null}
                   {copyPresentation.message ? (
                     <span aria-live="polite" className="text-[11px] text-muted-foreground">
@@ -201,8 +211,8 @@ export function XmlTab({
               {preview ? (
                 <div className="space-y-2">
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold text-foreground">Önizleme</p>
-                    <p className="text-xs text-muted-foreground">XML çıktısının ilgili bölümlerini kontrol edin.</p>
+                    <p className="text-sm font-semibold text-foreground">{tPreview('title')}</p>
+                    <p className="text-xs text-muted-foreground">{tPreview('descriptionXml')}</p>
                   </div>
                   <pre className="relative max-h-96 overflow-auto rounded-lg border border-border bg-[#0f1524] p-4 text-xs text-[#E8EFFE] shadow-lg ring-1 ring-black/5 before:absolute before:left-4 before:top-4 before:flex before:gap-1 before:rounded-full before:bg-transparent before:content-['']">
                     <span className="absolute left-4 top-3 flex gap-1">

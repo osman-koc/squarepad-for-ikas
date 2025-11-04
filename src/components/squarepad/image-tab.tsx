@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -47,6 +48,10 @@ export function ImageTab({
   onCopyShareUrl,
   copyPresentation,
 }: ImageTabProps) {
+  const tForm = useTranslations('squarepad.form');
+  const tButtons = useTranslations('squarepad.buttons');
+  const tPreview = useTranslations('squarepad.preview');
+
   return (
     <Card>
       <CardHeader>
@@ -57,23 +62,23 @@ export function ImageTab({
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2 space-y-2">
               <label className="text-sm font-medium text-foreground" htmlFor="image-url-input">
-                Görsel URL
+                {tForm('imageUrl.label')}
               </label>
               <Input
                 id="image-url-input"
-                placeholder="https://cdn.ikas.com/media/product-image.jpg"
+                placeholder={tForm('imageUrl.placeholder')}
                 value={form.img}
                 onChange={(event) => onFormUpdate({ img: event.target.value })}
-                onInvalid={(event) => event.currentTarget.setCustomValidity('Lütfen dönüştürülecek görsel URL’sini girin.')}
+                onInvalid={(event) => event.currentTarget.setCustomValidity(tForm('imageUrl.validationError'))}
                 onInput={(event) => event.currentTarget.setCustomValidity('')}
                 required
               />
-              <p className="text-xs text-muted-foreground">CDN veya ürün sayfası üzerindeki görsel bağlantısını doğrudan kullanabilirsiniz.</p>
+              <p className="text-xs text-muted-foreground">{tForm('imageUrl.hint')}</p>
             </div>
             <div className="space-y-2">
               <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="image-size-input">
-                Çıktı Boyutu (px)
-                <InfoTooltip message="Kare görselin genişlik ve yüksekliğini piksel cinsinden belirler." />
+                {tForm('size.label')}
+                <InfoTooltip message={tForm('size.tooltip')} />
               </label>
               <Input
                 id="image-size-input"
@@ -86,8 +91,8 @@ export function ImageTab({
             </div>
             <div className="space-y-2">
               <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="image-align-select">
-                Yerleşim
-                <InfoTooltip message="Görsel kare alan içinde nasıl hizalansın?" />
+                {tForm('align.label')}
+                <InfoTooltip message={tForm('align.tooltip')} />
               </label>
               <select
                 id="image-align-select"
@@ -97,15 +102,15 @@ export function ImageTab({
               >
                 {ALIGN_OPTIONS.map((align) => (
                   <option key={align} value={align}>
-                    {align}
+                    {tForm(`align.options.${align}`)}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
               <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="image-format-select">
-                Format
-                <InfoTooltip message="Çıktı dosya türünü seçin. Auto seçeneği tarayıcıya göre uygun formatı üretir." />
+                {tForm('format.label')}
+                <InfoTooltip message={tForm('format.tooltip')} />
               </label>
               <select
                 id="image-format-select"
@@ -115,15 +120,15 @@ export function ImageTab({
               >
                 {FORMAT_OPTIONS.map((format) => (
                   <option key={format} value={format}>
-                    {format.toUpperCase()}
+                    {tForm(`format.options.${format}`)}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
               <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="image-bg-input">
-                Arka Plan
-                <InfoTooltip message="Kare içinde kalan boşlukların rengini ayarlayın." />
+                {tForm('background.label')}
+                <InfoTooltip message={tForm('background.tooltip')} />
               </label>
               <div className="flex items-center gap-3">
                 <Input
@@ -138,7 +143,7 @@ export function ImageTab({
                   }}
                 />
                 <Input
-                  aria-label="Arka plan hex"
+                  aria-label={tForm('background.label')}
                   className="max-w-[140px]"
                   value={bgDraft.toUpperCase()}
                   onChange={(event) => {
@@ -160,17 +165,17 @@ export function ImageTab({
 
           <div className="flex items-center gap-3">
             <Button type="submit" disabled={loading || !hasToken}>
-              {loading ? 'Oluşturuluyor…' : 'Kare Görseli Oluştur'}
+              {loading ? tButtons('generating') : tButtons('generateSquare')}
             </Button>
           </div>
 
           {previewUrl && (
             <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,260px)]">
-              <div className="space-y-4 rounded-lg border border-muted/70 bg-muted/20 p-4">
+                            <div className="space-y-4 rounded-lg border border-muted/70 bg-muted/20 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold text-foreground">Paylaşılabilir bağlantı</p>
-                    <p className="text-xs text-muted-foreground">URL’yi paylaşın veya otomasyonlarınıza ekleyin.</p>
+                    <p className="text-sm font-semibold text-foreground">{tPreview('shareTitle')}</p>
+                    <p className="text-xs text-muted-foreground">{tPreview('shareDescriptionShort')}</p>
                   </div>
                   <Button type="button" variant={copyPresentation.variant} size="sm" onClick={onCopyShareUrl} disabled={!shareUrl}>
                     {copyPresentation.label}
@@ -186,16 +191,16 @@ export function ImageTab({
 
               <div className="space-y-4 rounded-lg border border-dashed border-muted bg-muted/20 p-4">
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold text-foreground">Önizleme</p>
-                  <p className="text-xs text-muted-foreground">Seçilen görselin kare versiyonunu kontrol edin.</p>
+                  <p className="text-sm font-semibold text-foreground">{tPreview('title')}</p>
+                  <p className="text-xs text-muted-foreground">{tPreview('descriptionImage')}</p>
                 </div>
                 <div className="flex flex-col items-center gap-4">
                   <div className="flex h-56 w-56 items-center justify-center rounded-md border border-muted/80 bg-background/80 p-2 shadow-sm">
-                    <Image alt="Kare görsel önizleme" className="h-[200px] w-[200px] rounded object-contain" height={200} width={200} src={previewUrl} unoptimized />
+                    <Image alt={tPreview('imageAlt')} className="h-[200px] w-[200px] rounded object-contain" height={200} width={200} src={previewUrl} unoptimized />
                   </div>
                   <Button asChild size="sm" variant="outline" className="w-full">
                     <a download href={previewUrl} rel="noreferrer" target="_blank">
-                      Görseli indir
+                      {tButtons('downloadImage')}
                     </a>
                   </Button>
                 </div>

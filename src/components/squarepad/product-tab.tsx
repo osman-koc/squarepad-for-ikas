@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -66,20 +67,26 @@ export function ProductTab({
   copyPresentation,
   onSelectProductImage,
 }: ProductTabProps) {
+  const t = useTranslations('squarepad');
+  const tForm = useTranslations('squarepad.form');
+  const tButtons = useTranslations('squarepad.buttons');
+  const tPreview = useTranslations('squarepad.preview');
+  const tCommon = useTranslations('common');
+
   const previewImageContainer = useMemo(
     () => (
       <div className="flex flex-col items-center gap-4">
         <div className="flex h-56 w-56 items-center justify-center rounded-md border border-muted/80 bg-background/80 p-2 shadow-sm">
-          <Image alt="Ürün kare görseli" className="h-[200px] w-[200px] rounded object-contain" height={200} width={200} src={previewUrl!} unoptimized />
+          <Image alt={t('preview.title')} className="h-[200px] w-[200px] rounded object-contain" height={200} width={200} src={previewUrl!} unoptimized />
         </div>
         <Button asChild size="sm" variant="outline" className="w-full">
           <a download href={previewUrl!} rel="noreferrer" target="_blank">
-            Görseli indir
+            {tPreview('downloadImage')}
           </a>
         </Button>
       </div>
     ),
-    [previewUrl],
+    [previewUrl, t, tPreview],
   );
 
   return (
@@ -92,18 +99,18 @@ export function ProductTab({
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2 space-y-3">
               <div className="flex items-center gap-1 text-sm font-medium text-foreground">
-                <span>Katalogdan Ürün ve Görsel Seçimi</span>
-                <InfoTooltip message="Ürün seçme penceresini açarak katalogdaki ürünleri ve görsellerini inceleyin." />
+                <span>{tForm('product.select')}</span>
+                <InfoTooltip message={tForm('product.selectTooltip')} />
               </div>
-              <InlineHint>Ürün adı, ID veya SKU ile arama yapabilir; seçtiğiniz ürünün görsellerini onay penceresi içinden yönetebilirsiniz.</InlineHint>
+              <InlineHint>{tForm('product.hint')}</InlineHint>
               <div className="flex flex-wrap items-center gap-3">
                 <Button type="button" disabled={!hasToken || listLoading} onClick={onOpenSelection}>
-                  {listLoading ? 'Ürünler yükleniyor…' : 'Ürün Seç'}
+                  {listLoading ? tCommon('loading') : tForm('product.select')}
                 </Button>
                 {listError && <span className="text-sm text-destructive">{listError}</span>}
                 {selectedProduct && (
                   <Button type="button" variant="ghost" size="sm" onClick={onClearSelection}>
-                    Seçimi Temizle
+                    {tForm('product.clearSelection')}
                   </Button>
                 )}
               </div>
@@ -114,13 +121,15 @@ export function ProductTab({
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">{selectedProduct.name}</h3>
-                    <p className="text-xs text-muted-foreground">SKU: {selectedProduct.variants.find((variant) => variant.sku)?.sku ?? 'Bilgi yok'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t('productDialog.sku')}: {selectedProduct.variants.find((variant) => variant.sku)?.sku ?? t('productDialog.skuUnknown')}
+                    </p>
                   </div>
-                  {selectedProductImage ? <span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">Görsel seçildi</span> : null}
+                  {selectedProductImage ? <span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">{tForm('product.selected')}</span> : null}
                 </div>
 
                 {productImagesLoading ? (
-                  <p className="text-xs text-muted-foreground">Ürün görselleri yükleniyor…</p>
+                  <p className="text-xs text-muted-foreground">{t('selectedProduct.imagesLoading')}</p>
                 ) : selectedProductImages.length > 0 ? (
                   <div className="flex flex-wrap gap-3">
                     {selectedProductImages.map((image, index) => {
@@ -135,32 +144,34 @@ export function ProductTab({
                           }`}
                         >
                           <Image
-                            alt={image.isMain ? 'Ana görsel' : `Görsel ${index + 1}`}
+                            alt={image.isMain ? t('preview.title') : `${t('preview.title')} ${index + 1}`}
                             className="h-20 w-full rounded object-contain"
                             height={80}
                             width={120}
                             src={image.url}
                             unoptimized
                           />
-                          <span className="text-[11px] text-muted-foreground">{image.isMain ? 'Ana Görsel' : `Görsel ${index + 1}`}</span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {image.isMain ? t('productDialog.skuUnknown') : `${t('preview.title')} ${index + 1}`}
+                          </span>
                         </button>
                       );
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground">Bu ürüne ait görsel bulunamadı.</p>
+                  <p className="text-xs text-muted-foreground">{t('selectedProduct.noImages')}</p>
                 )}
               </div>
             ) : (
               <div className="md:col-span-2">
-                <InlineHint>Ürün Seç butonu ile kataloğu açın; seçim yaptığınızda ürün ve görsel detayları burada listelenir.</InlineHint>
+                <InlineHint>{tForm('product.noProductSelected')}</InlineHint>
               </div>
             )}
 
             <div className="space-y-2">
               <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="product-size-input">
-                Çıktı Boyutu (px)
-                <InfoTooltip message="Kare görselin genişlik ve yüksekliğini piksel cinsinden belirler." />
+                {tForm('size.label')}
+                <InfoTooltip message={tForm('size.tooltip')} />
               </label>
               <Input
                 id="product-size-input"
@@ -173,8 +184,8 @@ export function ProductTab({
             </div>
             <div className="space-y-2">
               <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="product-align-select">
-                Yerleşim
-                <InfoTooltip message="Görsel kare alan içinde hangi yönde hizalansın?" />
+                {tForm('align.label')}
+                <InfoTooltip message={tForm('align.tooltip')} />
               </label>
               <select
                 id="product-align-select"
@@ -184,15 +195,15 @@ export function ProductTab({
               >
                 {ALIGN_OPTIONS.map((align) => (
                   <option key={align} value={align}>
-                    {align}
+                    {tForm(`align.options.${align}`)}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
               <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="product-format-select">
-                Format
-                <InfoTooltip message="Çıktı dosya türünü seçin. Auto seçeneği tarayıcı yeteneklerine göre en uygun formatı döndürür." />
+                {tForm('format.label')}
+                <InfoTooltip message={tForm('format.tooltip')} />
               </label>
               <select
                 id="product-format-select"
@@ -202,15 +213,15 @@ export function ProductTab({
               >
                 {FORMAT_OPTIONS.map((format) => (
                   <option key={format} value={format}>
-                    {format.toUpperCase()}
+                    {tForm(`format.options.${format}`)}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
               <label className="flex items-center gap-1 text-sm font-medium text-foreground" htmlFor="product-bg-input">
-                Arka Plan
-                <InfoTooltip message="Kare içinde boş kalan alanların rengini belirleyin." />
+                {tForm('background.label')}
+                <InfoTooltip message={tForm('background.tooltip')} />
               </label>
               <div className="flex items-center gap-3">
                 <Input
@@ -225,7 +236,7 @@ export function ProductTab({
                   }}
                 />
                 <Input
-                  aria-label="Arka plan hex"
+                  aria-label={tForm('background.label')}
                   className="max-w-[140px]"
                   value={bgDraft.toUpperCase()}
                   onChange={(event) => {
@@ -247,17 +258,17 @@ export function ProductTab({
 
           <div className="flex items-center gap-3">
             <Button type="submit" disabled={loading || !hasToken || !selectedProductImage}>
-              {loading ? 'Oluşturuluyor…' : 'Kare Görseli Oluştur'}
+              {loading ? tButtons('generating') : tButtons('generateSquare')}
             </Button>
           </div>
 
           {previewUrl && (
             <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,260px)]">
-              <div className="space-y-4 rounded-lg border border-muted/70 bg-muted/20 p-4">
+                            <div className="space-y-4 rounded-lg border border-muted/70 bg-muted/20 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold text-foreground">Paylaşılabilir bağlantı</p>
-                    <p className="text-xs text-muted-foreground">URL’yi e-ticaret ekipleriyle paylaşabilir veya kampanya araçlarınıza ekleyebilirsiniz.</p>
+                    <p className="text-sm font-semibold text-foreground">{tPreview('shareTitle')}</p>
+                    <p className="text-xs text-muted-foreground">{tPreview('shareDescription')}</p>
                   </div>
                   <Button type="button" variant={copyPresentation.variant} size="sm" onClick={onCopyShareUrl} disabled={!shareUrl}>
                     {copyPresentation.label}
@@ -273,8 +284,8 @@ export function ProductTab({
 
               <div className="space-y-4 rounded-lg border border-dashed border-muted bg-muted/20 p-4">
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold text-foreground">Önizleme</p>
-                  <p className="text-xs text-muted-foreground">Oluşturulan kare görseli kontrol edin ve dilediğiniz formatta indirin.</p>
+                  <p className="text-sm font-semibold text-foreground">{tPreview('title')}</p>
+                  <p className="text-xs text-muted-foreground">{tPreview('description')}</p>
                 </div>
                 {previewImageContainer}
               </div>
