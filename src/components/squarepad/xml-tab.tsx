@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { InfoTooltip } from '@/components/squarepad/info-tooltip';
+import { InlineHint } from '@/components/squarepad/inline-hint';
 import { SectionHeader } from '@/components/squarepad/section-header';
 import { ALIGN_OPTIONS, FORMAT_OPTIONS } from '@/constants/squarepad';
 import type { AlignOption, FormatOption } from '@/types/squarepad';
@@ -53,11 +54,17 @@ export function XmlTab({
       <CardHeader>
         <SectionHeader
           eyebrow="XML Feed"
-          title="XML feed’inizi kare görsellerle güncelleyin"
-          description="Kaynak XML’i girin, kare görsel parametrelerini belirleyin ve güncellenmiş çıktıyı indirin."
+          title="XML feed'inizi kare görsellerle güncelleyin"
+          description="Kaynak XML'i girin, kare görsel parametrelerini belirleyin ve güncellenmiş çıktıyı indirin."
         />
       </CardHeader>
       <CardContent>
+        <InlineHint>
+          XML dönüştürme, ikas&apos;ın Product Exporter uygulaması tarafından oluşturulan XML&apos;i dönüştürmek üzerine kurgulanmıştır. Bu XML&apos;deki{' '}
+          <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">&lt;g:image_link&gt;</code> ve{' '}
+          <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">&lt;g:additional_image_link&gt;</code> tag&apos;lerinde yer alan görsel linklerini 1:1
+          formatlanmış halleriyle değiştirerek yeni bir xml linki oluşturuyor.
+        </InlineHint>
         <form className="space-y-6" onSubmit={onSubmit}>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2 space-y-2">

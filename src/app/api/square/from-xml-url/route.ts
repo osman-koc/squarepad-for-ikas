@@ -30,38 +30,34 @@ function buildSquareUrl(origin: string, imageUrl: string, params: URLSearchParam
 
 function replaceImageLinks(xml: string, origin: string, params: URLSearchParams): string {
   // First pass: replace <g:image_link> tags only
+  // Use non-greedy match and ensure we don't cross into other tags
   const afterImageLink = xml.replace(
-    /(<g:image_link[^>]*>)([\s\S]*?)(<\/g:image_link>)/gi,
-    (match, openTag: string, content: string, closeTag: string) => {
-      return processImageLink(match, openTag, content, closeTag, origin, params);
+    /<g:image_link>([\s\S]*?)<\/g:image_link>/gi,
+    (match, content: string) => {
+      const transformed = transformImageUrl(content, origin, params);
+      return `<g:image_link>${transformed}</g:image_link>`;
     }
   );
 
   // Second pass: replace <g:additional_image_link> tags only
   const afterAdditionalImageLink = afterImageLink.replace(
-    /(<g:additional_image_link[^>]*>)([\s\S]*?)(<\/g:additional_image_link>)/gi,
-    (match, openTag: string, content: string, closeTag: string) => {
-      return processImageLink(match, openTag, content, closeTag, origin, params);
+    /<g:additional_image_link>([\s\S]*?)<\/g:additional_image_link>/gi,
+    (match, content: string) => {
+      const transformed = transformImageUrl(content, origin, params);
+      return `<g:additional_image_link>${transformed}</g:additional_image_link>`;
     }
   );
 
   return afterAdditionalImageLink;
 }
 
-function processImageLink(
-  match: string,
-  openTag: string,
-  content: string,
-  closeTag: string,
-  origin: string,
-  params: URLSearchParams
-): string {
+function transformImageUrl(content: string, origin: string, params: URLSearchParams): string {
   const leadingWhitespace = content.match(/^\s*/)?.[0] ?? '';
   const trailingWhitespace = content.match(/\s*$/)?.[0] ?? '';
   const inner = content.slice(leadingWhitespace.length, content.length - trailingWhitespace.length);
 
   if (!inner) {
-    return match;
+    return content;
   }
 
   let rawLink = inner;
@@ -74,19 +70,18 @@ function processImageLink(
 
   const normalised = rawLink.trim();
   if (!normalised) {
-    return match;
+    return content;
   }
 
   let transformed: string;
   try {
     transformed = buildSquareUrl(origin, normalised, params);
   } catch {
-    return match;
+    return content;
   }
 
   const safeContent = useCdata ? `<![CDATA[${transformed}]]>` : escapeXml(transformed);
-  const replacedContent = `${leadingWhitespace}${safeContent}${trailingWhitespace}`;
-  return `${openTag}${replacedContent}${closeTag}`;
+  return `${leadingWhitespace}${safeContent}${trailingWhitespace}`;
 }
 
 export async function GET(req: NextRequest) {
