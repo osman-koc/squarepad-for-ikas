@@ -107,6 +107,7 @@ export async function GET(req: NextRequest) {
     const bg    = normaliseHexColor(sp.get('bg'));
     const align = sp.get('align');
     const format= pickFormat(req.headers.get('accept'), sp.get('format'));
+    const paddingPercent = clampNumber(sp.get('pad'), 0, 10, 2) / 100;
 
     if (!productId) {
       return NextResponse.json({ error: 'missing_productId' }, { status: 400 });
@@ -132,8 +133,19 @@ export async function GET(req: NextRequest) {
     // 6) kareleme
     const { buf: inputBuffer, lastMod } = await fetchImage(srcUrl);
 
+    // Add padding to prevent images from touching edges (default 2%)
+    const paddingSize = Math.round(size * paddingPercent);
+    const innerSize = size - (paddingSize * 2);
+
     let pipe = sharp(inputBuffer, { failOn: 'none' })
-      .resize(size, size, { fit: 'contain', background: bg, position: gravityFromAlign(align) });
+      .resize(innerSize, innerSize, { fit: 'contain', background: bg, position: gravityFromAlign(align) })
+      .extend({
+        top: paddingSize,
+        bottom: paddingSize,
+        left: paddingSize,
+        right: paddingSize,
+        background: bg,
+      });
 
     let contentType: `image/${SupportedFormat}` = 'image/jpeg';
     switch (format) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PASS_THROUGH_PARAMS = ['size', 'bg', 'align', 'format'] as const;
+const PASS_THROUGH_PARAMS = ['size', 'bg', 'align', 'format', 'pad'] as const;
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

@@ -117,15 +117,28 @@ export async function GET(req: NextRequest) {
     const background = normaliseHexColor(searchParams.get('bg'));
     const align = searchParams.get('align');
     const format = pickFormat(req.headers.get('accept'), searchParams.get('format'));
+    const paddingPercent = clampNumber(searchParams.get('pad'), 0, 10, 2) / 100;
     const sourceUrl = decodeURIComponent(imageParam);
 
     const { buffer: inputBuffer, lastModified } = await fetchImage(sourceUrl);
 
-    let pipeline = sharp(inputBuffer, { failOn: 'none' }).resize(size, size, {
-      fit: 'contain',
-      background,
-      position: gravityFromAlign(align),
-    });
+    // Add padding to prevent images from touching edges (default 2%)
+    const paddingSize = Math.round(size * paddingPercent);
+    const innerSize = size - (paddingSize * 2);
+
+    let pipeline = sharp(inputBuffer, { failOn: 'none' })
+      .resize(innerSize, innerSize, {
+        fit: 'contain',
+        background,
+        position: gravityFromAlign(align),
+      })
+      .extend({
+        top: paddingSize,
+        bottom: paddingSize,
+        left: paddingSize,
+        right: paddingSize,
+        background,
+      });
 
     let contentType: `image/${SupportedFormat}` = 'image/jpeg';
     switch (format) {
