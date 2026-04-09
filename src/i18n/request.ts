@@ -23,9 +23,9 @@ export default getRequestConfig(async () => {
     locale = localeCookie as Locale;
   }
 
-  console.log('[i18n] Header locale:', localeFromHeader);
-  console.log('[i18n] Cookie locale:', localeCookie);
-  console.log('[i18n] Final locale:', locale);
+  //console.log('[i18n] Header locale:', localeFromHeader);
+  //console.log('[i18n] Cookie locale:', localeCookie);
+  //console.log('[i18n] Final locale:', locale);
 
   return {
     locale,
