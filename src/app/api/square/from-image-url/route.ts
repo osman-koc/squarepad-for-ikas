@@ -19,6 +19,7 @@ const MAX_INPUT_MB = envNumber('SQUARE_MAX_INPUT_MB', 15);
 const MAX_IMAGE_BYTES = MAX_INPUT_MB * 1024 * 1024;
 const IMAGE_TIMEOUT_MS = 5000;
 const MIN_SIZE = 128;
+const SUPPORTED_SOURCE_PROTOCOLS = new Set(['http:', 'https:']);
 
 type SupportedFormat = 'jpeg' | 'webp' | 'avif' | 'png';
 
@@ -79,7 +80,7 @@ function createEtag(buffer: Buffer): string {
 async function fetchImage(
   url: string,
   timeoutMs: number = IMAGE_TIMEOUT_MS,
-): Promise<{ buffer: Buffer; lastModified: string }> {
+): Promise<{ buffer: Buffer; contentType: string | null; lastModified: string }> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -95,11 +96,52 @@ async function fetchImage(
       throw new Error('too_big');
     }
 
+    const contentType = response.headers.get('content-type');
     const lastModified = response.headers.get('last-modified') ?? new Date().toUTCString();
-    return { buffer, lastModified };
+    return { buffer, contentType, lastModified };
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function parseImageUrl(value: string): URL | null {
+  try {
+    const url = new URL(value);
+    if (!SUPPORTED_SOURCE_PROTOCOLS.has(url.protocol)) {
+      return null;
+    }
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+function isImageContentType(value: string | null): boolean {
+  return value?.toLowerCase().startsWith('image/') ?? false;
+}
+
+function errorStatus(error: unknown): number {
+  if (!(error instanceof Error)) {
+    return 500;
+  }
+
+  if (error.name === 'AbortError') {
+    return 504;
+  }
+
+  if (error.message === 'too_big') {
+    return 413;
+  }
+
+  if (error.message.startsWith('fetch_')) {
+    return 502;
+  }
+
+  if (error.message === 'unsupported_media_type' || error.message.includes('unsupported image format')) {
+    return 415;
+  }
+
+  return 500;
 }
 
 export const runtime = 'nodejs';
@@ -118,9 +160,15 @@ export async function GET(req: NextRequest) {
     const align = searchParams.get('align');
     const format = pickFormat(req.headers.get('accept'), searchParams.get('format'));
     const paddingPercent = clampNumber(searchParams.get('pad'), 0, 10, 2) / 100;
-    const sourceUrl = decodeURIComponent(imageParam);
+    const sourceUrl = parseImageUrl(imageParam);
+    if (!sourceUrl) {
+      return NextResponse.json({ error: 'invalid_img' }, { status: 400 });
+    }
 
-    const { buffer: inputBuffer, lastModified } = await fetchImage(sourceUrl);
+    const { buffer: inputBuffer, contentType: sourceContentType, lastModified } = await fetchImage(sourceUrl.toString());
+    if (sourceContentType && !isImageContentType(sourceContentType)) {
+      return NextResponse.json({ error: 'unsupported_media_type' }, { status: 415 });
+    }
 
     // Add padding to prevent images from touching edges (default 2%)
     const paddingSize = Math.round(size * paddingPercent);
@@ -179,6 +227,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'internal_error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: errorStatus(error) });
   }
 }

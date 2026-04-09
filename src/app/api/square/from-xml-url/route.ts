@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const PASS_THROUGH_PARAMS = ['size', 'bg', 'align', 'format', 'pad'] as const;
+const UNSUPPORTED_MEDIA_EXTENSIONS = new Set([
+  '.mp4',
+  '.m4v',
+  '.mov',
+  '.avi',
+  '.webm',
+  '.mkv',
+  '.mp3',
+  '.wav',
+  '.ogg',
+]);
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -26,6 +37,26 @@ function buildSquareUrl(origin: string, imageUrl: string, params: URLSearchParam
   }
 
   return url.toString();
+}
+
+function shouldTransformImageUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return false;
+    }
+
+    const pathname = url.pathname.toLowerCase();
+    for (const extension of UNSUPPORTED_MEDIA_EXTENSIONS) {
+      if (pathname.endsWith(extension)) {
+        return false;
+      }
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function replaceImageLinks(xml: string, origin: string, params: URLSearchParams): string {
@@ -70,6 +101,10 @@ function transformImageUrl(content: string, origin: string, params: URLSearchPar
 
   const normalised = rawLink.trim();
   if (!normalised) {
+    return content;
+  }
+
+  if (!shouldTransformImageUrl(normalised)) {
     return content;
   }
 
