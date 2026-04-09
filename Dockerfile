@@ -48,8 +48,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
-# Ensure runtime has openssl installed for Prisma when required
-RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-certificates \
+# Ensure runtime has openssl and curl installed (curl is used for HEALTHCHECK)
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-certificates curl \
 	&& rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/public ./public
@@ -83,6 +83,10 @@ USER nextjs
 # Set environment variables for runtime
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+
+# Health check: ping /api/health every 30s, allow 60s startup time
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:3000/api/health || exit 1
 
 # Copy entrypoint that runs prisma migrations when DATABASE_URL is set
 ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
